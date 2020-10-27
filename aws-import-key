@@ -1,0 +1,62 @@
+#! /usr/bin/bash
+
+##################################################
+# Generate an RSA public/private key pair
+# Import the public key into AWS key pair servce
+##################################################
+function usage {
+    echo "USAGE: aws-import-key  -h -n <key-name> -p <key-path>" 
+    echo "Required: key-name - Used to generate a named key"
+    echo "Required: key-path - The generated RSA private key file-path; The generated RSA" 
+    echo "public key file-path: appends '.pub' extension to the private-key file-name"
+    exit 1
+}
+if [[ ! $@ =~ ^\-.+ ]]; then
+    usage
+fi
+while getopts ":hn:p:" opt; do
+  case ${opt} in
+    n )
+        keyName=$OPTARG 
+        ;;
+    p )
+        keyPath=$OPTARG;
+        ;;
+    h )
+	usage
+        ;;
+    \? )
+	usage
+	;;
+    : )
+        echo "Invalid Option: -$OPTARG" 1>&2
+	usage
+      exit 1
+	;;
+	esac
+done
+shift $((OPTIND -1))
+
+if [  -z "${keyName}" ]; then
+	usage
+fi
+if [  -z "${keyPath}" ]; then
+	usage
+fi
+    ssh-keygen  -C "${keyName}" -f "${keyPath}" -N ''
+if [ ! -f "${keyPath}" ]; then
+    ssh-keygen  -C "${keyName}" -f "${keyPath}" -N ''
+else 
+    echo "Key file already exists.\n"
+fi
+if [ $? -ne 0 ];then
+    exit
+fi
+read -r -p "Import existing key to AWS key pair service? [y/N] " response
+case "$response" in
+    [yY][eE][sS]|[yY]) 
+	break;;
+    *)
+	exit 1;;        
+esac
+aws ec2  import-key-pair --key-name "${keyName}" --public-key-material "fileb://${keyPath}.pub"
