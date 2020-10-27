@@ -5,16 +5,18 @@
 # Import the public key into AWS key pair servce
 ##################################################
 function usage {
-    echo "USAGE: aws-import-key  -h -n <key-name> -p <key-path>" 
-    echo "Required: key-name - Used to generate a named key"
-    echo "Required: key-path - The generated RSA private key file-path; The generated RSA" 
-    echo "public key file-path: appends '.pub' extension to the private-key file-name"
+    echo "USAGE: aws-import-key [-h] [-d] <-n <key-name>> <-p <key-path>>" 
+    echo "Required: <-n <key-name>> - Used to generate a named key"
+    echo "Required: <-p <key-path>> - The file-path for the new RSA private-key. The new"
+    echo "          RSA public-key file-name uses the private-key file-name with a <.pub> extension." 
+    echo "Optional: [-d]  - Dry run: Tests and confirms service connection -- no keys are imported."
+    echo "Optional: [-h]  - Help."
     exit 1
 }
 if [[ ! $@ =~ ^\-.+ ]]; then
     usage
 fi
-while getopts ":hn:p:" opt; do
+while getopts ":hdn:p:" opt; do
   case ${opt} in
     n )
         keyName=$OPTARG 
@@ -22,7 +24,15 @@ while getopts ":hn:p:" opt; do
     p )
         keyPath=$OPTARG;
         ;;
+    d )
+        dryRunOpt=--dry-run
+        ;;
     h )
+	echo " aws-import-key accepts a key-name and key-path as arguments."
+	echo " The key-name and key-path are used to generate an RSA Key Pair."
+	echo " The public key is then sent to the AWS Key Pair Service."
+	echo " It imports the public key into the associated account."  
+	echo " "  
 	usage
         ;;
     \? )
@@ -55,8 +65,9 @@ fi
 read -r -p "Import existing key to AWS key pair service? [y/N] " response
 case "$response" in
     [yY][eE][sS]|[yY]) 
-	break;;
+	;;
     *)
-	exit 1;;        
+	exit 1
+	;;        
 esac
-aws ec2  import-key-pair --key-name "${keyName}" --public-key-material "fileb://${keyPath}.pub"
+aws ec2  import-key-pair "${dryRunOpt}" --key-name "${keyName}" --public-key-material "fileb://${keyPath}.pub"
