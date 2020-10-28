@@ -51,4 +51,3 @@ with open('%s/%s'%(DATA_DIR,'Vpcs.json'),'r') as f:
 srchStr = "[[*].Vpcs[0].Tags[*], [*].Vpcs[0].VpcId]"
 with open('%s/%s'%(DATA_DIR,'VpcTags-Id.json'),'w') as f1:
     f1.write(json.dumps(jmespath.search(srchStr,jsonVpcList), sort_keys='True', indent=4, separators=(',',': ')))
-exit()
