@@ -1,45 +1,23 @@
 #! /usr/bin/python3
 
-import sys
-import os
-import io
 import argparse
-import re
-from pathlib import Path
-from libtiff import TIFF
-from PIL import Image
-import xml.etree.ElementTree as ET
 import boto3
 import botocore
+import io
+from libtiff import TIFF
+from lxml import etree as ET 
+import os
+from pathlib import Path
+from PIL import Image
+import re
+import sys
 
 #############   Define Classes  ###############
 
 ##### Data Format Class #####
 # User Interface
 # Upload patents to 's3' storage
-object_bucket = 'ocm-train-s3.std-dev-us'
-object_acl = 'public-read'
-object_format = 'xml'
-object_name = '%s.%s'%('patents',OBJECT_FORMAT)
-# object_key = '%s/%s/%s'%(OBJECT_ACL,OBJECT_DIR,OBJECT_NAME)
-object_region = 'us-east-2'
-HOME = os.getenv('HOME')
-~/data/I20201117
-patent_dir_root  = PurePath('/%s/%s'%(HOME,'data/I20201117'))
-s3_dir_root = 'uspto/patent'
-            for patent_dir in PATENT_DIR_ROOT.glob('*') :
-                patent_dir_path = '%s/%s'%(PATENT_DIR_ROOT,patent_dir)
-                patent_dir_path.glob('*[.][Xx][Mm][Ll]') :
-                xml_path = PurePath('/%s/%s'%(HOME,'data/I20201117'))
-                xml_s3_data = data_format(STORAGE = 's3',
-                    PATH = xml_path,
-                    BUCKET = bucket,
-                    REGION = object_region,
-                    ROOT_DIR = s3_dir_root,
-                    ACL = object_acl,
-                    DATA_TYPE='xml')
-
-class data_format :
+class storage_format :
     __init__(self, { STORAGE: storage_class,
          PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
     super().__init__(self, storage_class,
@@ -56,10 +34,10 @@ class data_format :
         self.__set_format()
         self.arg_list = {
             'file':(self.path, self.format),
-            'S3':(self.path, self.format, self.bucket, self.region ) }
+            's3':(self.path, self.format, self.bucket, self.region ) }
         if not self.__verify_arg_list() :
             self.__del__()
-        _launch(
+        instantiate_storage_format(
             ACL = acl, 
             BUCKET = bucket, 
             DATA_TYPE = data_type,
@@ -95,7 +73,7 @@ class data_format :
 
 ##### Instantiate  data format#####
 
-class  _launch() :
+class  _instantiate_storage_format() :
         __init__(self, { STORAGE: storage_class,
             PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type }) :
         self.acl = args[1].set_default(ACL: 'public-read')
@@ -303,7 +281,7 @@ class _format_file(base_form) :
             if ( format_data.body != None ) :
                 rgb_image = tiff_image.convert('RGB')
                 png_image = rgb_image.convert('PNG')
-                png_data = _launch(DATA_TYPE = 'PNG')
+                png_data = storage_format(DATA_TYPE = 'PNG')
         return(png_data.get(png_image))
     def __get_xml_associates() : 
         if self.__verify_xml() :
@@ -323,7 +301,6 @@ class _format_file(base_form) :
             else if self.__verify_xml() :
                 self.tree = self.body = ET.parse(self.path)
                 self.__get_xml_associates()
-                xml.close()
             else self.__verify_text_stream() :
                 with open (self.path, 'r') as f :
                     self.text = self.body = f.read()
@@ -332,7 +309,8 @@ class _format_file(base_form) :
             self.body = None
     def __set_xml_associate(path) :
         if self.__verify_xml() :
-            self.xml_files.append( { 'Format Data': _launch(PATH=path)})
+
+            self.xml_files.append( { 'Format Data': storage_format(PATH=path)})
     def get(stream) :
         if self.__verify_image() :
             im = Image.open(io.BytesIO(stream))
@@ -428,32 +406,23 @@ class _format_s3 (format_file) :
         super().__init__(self, { STORAGE = storage_class,
              PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
         self.__set_service()
+
+##### Connect to the s3 Service ######
         s3 = boto3.resource( self.service, region_name = region )
         client = boto3.client( S3_SERVICE )
         self.__set_location ()
+
+#####  Set arguments  ######
         self.__set_bucket()
         self.__set_key ()
+        self.__set_uri()
         self.__set_body()
+        `
+#####  Put S3 Object  ######
         self.__put_object()
-        self.__set_uri ()
+
     def __del__(self):
         super(object_store, self).__del__() 
-    def __get_xml_associates() : 
-        if self.__verify_xml() :
-            for im in self.tree.getroot().iter('img') :
-                path = PurePath('%s/%s'%(self.path.parents[0],im.path))
-                if path.exists :
-                    format_data = _launch(STORAGE = 's3',
-                        PATH = path, 
-                        BUCKET = self.bucket,
-                        ROOT_DIR = self.root_dir )
-                    self.__set_xml_associate(format_data)))
-            for path in self.path.parents[0].glob('*' + self.nb) :
-                format_data = _launch(STORAGE = 's3',
-                    PATH = path,
-                    BUCKET = self.bucket,
-                    ROOT_DIR = self.root_dir )
-                self.__set_xml_associate(PurePath(format_data))
     def __get_s3_Object ()
         if self.s3_object == None : # S3_object doesn't exist
             try:
@@ -465,6 +434,30 @@ class _format_s3 (format_file) :
                     raise
             else: # s3 object found
                 self.s3_object = s3.Object(self.bucket, self.key).get()
+    def __get_xml_associates() : 
+        if self.__verify_xml() :
+            for im in self.tree.getroot().iter('img') :
+                im.attrib['file'] = PurePath(im.attrib['file']).suffix('png')
+                im.attrib['img-format'] = 'png'
+                parent =  im.getparent()
+                new_parent = ET.Element('a')
+                new_parent.extend('parent')
+                parent.append(new_parent)
+                new_parent.attrib['href'] = self.uri
+                path = PurePath( '%s/%s'%(self.path.parents[0],im.attrib['file'])
+                if path.exists :
+                    format_data = storage_format(STORAGE = 's3',
+                        PATH = self.path, 
+                        BUCKET = self.bucket,
+                        ROOT_DIR = self.root_dir )
+                    self.__set_xml_associate(format_data)))
+                self.body = self.tree
+            for path in self.path.parents[0].glob('*' + self.nb) :
+                format_data = storage_format(STORAGE = 's3',
+                    PATH = path,
+                    BUCKET = self.bucket,
+                    ROOT_DIR = self.root_dir )
+                self.__set_xml_associate(PurePath(format_data))
     def __put_object () :
         if self.body != None : # body exists
             try:
@@ -551,155 +544,48 @@ class _format_s3 (format_file) :
     def set_linked_image_files() : ...
     def set_linked_image_uris() : ...
 
-S3_SERVICE = 's3'
-S3_DIR = 'uspto/patent'
-OBJECT_BUCKET = 'ocm-train-s3.std-dev-us'
-OBJECT_ACL = 'public-read'
+#############   Setup the patent environment   ###############
+local_home = os.getenv('HOME')
+s3_patent_acl = 'public-read'
+s3_patent_bucket = 'ocm-train-s3.std-dev-us'
+s3_patent_root_dir = 'uspto/patent'
+s3_patent_region = 'us-east-2'
+uspto_file_format = 'xml'
 
-s3 = boto3.resource( S3_SERVICE, region_name = REGION )
-client = boto3.client( S3_SERVICE )
-location = client.get_bucket_location(Bucket=OBJECT_BUCKET)['LocationConstraint']
+################# command-line interface #################
+parser = argparse.ArgumentParser()
+subparsers = parser.add_subparsers(help='commands')
 
-parser = argparse.ArgumentParser(description='Upload a tiff file to AWS-S3')
-parser.add_argument('-t','--tif', required=True, type=Path, nargs=1, default="",
-                    help='local path to a TIFF file')
-parser.add_argument('-x','--xml', required=True, type=Path, nargs=1, default="",
-                    help='local path to an ML file')
-parser.add_argument('-e','-E','--exclude-image', required=False, type=Boolean, nargs=0, default=False,
-                    help='Used with -x option; Post ML only; image files remain local' 
-args = parser.parse_args()
-if args.tif[0].verify :
-    png = {
-        tif_path: args.tif[0],
-        path: args.tif[0].with_suffix("PNG"),
-        bucket: OBJECT_BUCKET,
-        s3_dir: S3_DIR,
-        acl: OBJECT_ACL,
-        location: location,
-        key: '',
-        uri: '',
-        image: NULL }
-    png.key = PureFilePath('%s/%s/%s'%(png.acl,png.s3_dir,png.path))
-    png = tif2png (png)
-try:
-    s3.Object(png.bucket, png.key).load()
-except botocore.exceptions.ClientError as e: 
-    if e.response['Error']['Code'] == "404": # file not found
-        png = post_png_s3 (png) :
-    else
-        raise
-else: # file found
-    response = input('/%s/%s::%s'%(bucket, key, 'already exists, would you like to over-write it?\n'))
-    if re.match('[Yy][Ee]?[Ss]?',response):
-        png = post_png_s3 (png) :
+################# [file] storage class subcommand line #################
+file_parser = subparsers.add_parser(storage_class='file',help='specify storage_class as "file":')
+file_parser.add_argument('-f','--file_format', required=True, type=file, nargs=1, default = uspto_format) 
+    help='Specify file-path with extension else use file-format when file does not exist. Supported file-formats: gif, nb, png, rgb, text, tiff, xml'
 
-if args.xml[0].verify :
-    xml = {
-        path: args.xml[0],
-        ximage: exclude-image,
-        bucket: OBJECT_BUCKET,
-        s3_dir: S3_DIR,
-        acl: OBJECT_ACL,
-        location: location,
-        tif = [{ name: '', image: NULL}],
-        png = [png],
-        key: '',
-        uri: '',
-        tmesree: '',
-        root: '' }
-   xml.key = PureFilePath('%s/%s/%s'%(xml.acl,xml.s3_dir,xml.path))
-   xml.tree = ET.parse(xml_file_path)
-   xml.root = tree.getroot()
-   xml = post_xml_s3 (xml) 
+################# [s3] storage class subcommand line #################
+s3_parser = subparsers.add_parser(storage_class='s3',help='specify storage_class as "s3":')
+s3_parser.add_argument('-a','--acl', required=True, type=str, nargs=1, default = s3_patent_acl,
+    help='Specify s3 access control list')
+s3_parser.add_argument('-b','--bucket', required=True, type=str, nargs=1, default = s3_patent_bucket,
+    help='Specify s3 bucket')
+s3_parser.add_argument('-d','--directory', required=True, type=str, nargs=1, default = s3_patent_root_dir,
+    help='Specify s3 root directory')
+s3_parser.add_argument('-f','--file_format', required=True, type=file, nargs=1, default = uspto_file_format)
+    help='Specify file-path with extension else use file-format when file does not exist. Supported file-formats: gif, nb, png, rgb, text, tiff, xml'
+s3_parser.add_argument('-r','--region', required=True, type=str, nargs=1, default = s3_patent_region,
+    help='Specify s3 region')
 
-sys.exit()
+if Path.PurePath(file_format).exists :
+    data_type = Path.PurePath(file_format).suffix()
+    path = file_format
+else :
+    data_type = file_format
+    path = ''
 
-#! /usr/bin/python3
-
-import boto3
-import botocore
-import jmespath
-import json
-import os
-import re
-
-#  Request and filter interesting 'ec2' Instances from AWS's 'ec2' Service.
-#  Instances are filtered using 'ec2' Tags[Name/Value Pairs].
-#  Interesting Instances are sent to S3 as a list of json objects
-#  Interesting Instances are queried -- JmesPath 
-#  Options interface is planned as a future enhancement.
-
-#############   Intialize varaibles ###############
-
-instances = []
-InstanceIds = []
-
-#############   Setup the Environment   ###############
-
-REGION = 'us-east-2'
-
-EC2_SERVICE = 'ec2'
-TAG = 'Name'
-INSTANCES = ['ocm-train-ubuntu2004.ebs.t2.micro1-dev-us', 'ocm-train-ec2(ub2004.ebs.t2.mic2)vpc(cust1)-dev-us' ] 
-#FILTERS = [{ 'Name':'%s%s'%('tag:',TAG), 'Values':INSTANCES}]
-INSTANCE_PATTERN = [ 'ocm*' ]
-FILTERS = [{ 'Name':'%s%s'%('tag:',TAG), 'Values':INSTANCE_PATTERN}]
-
-S3_SERVICE = 's3'
-OBJECT_BUCK = 'ocm-train-s3.std-dev-us'
-OBJECT_ACL = 'public-read'
-OBJECT_DIR = 'Sys-mgt'
-OBJECT_FORMAT = 'json'
-OBJECT_NAME = '%s.%s'%('Instances',OBJECT_FORMAT)
-OBJECT_KEY = '%s/%s/%s'%(OBJECT_ACL,OBJECT_DIR,OBJECT_NAME)
-
-# connect with the EC2 service; use instance 'Tags' to filter interesting instances
-ec2 = boto3.resource( EC2_SERVICE, region_name = REGION)
-client = boto3.client( EC2_SERVICE )
-[ ec2.Instance(id = 'i-054b01cb726c32afd'), ec2.Instance(id = 'i-037345e13d2095e99') ]
-instances = list(ec2.instances.filter(Filters=FILTERS))
-
-#############   Serialize the interesting Instances ###############
-
-jsonStr = '[\n' # open the json object array for serializing json objects.
-for instance in instances:
-    response = client.describe_instances( InstanceIds = [instance.id])
-    jsonStr = '%s%s,'%(jsonStr,json.dumps(response, sort_keys='True', indent=4, default=str, separators=(',',': ')))
-jsonStr = '%s%s'%("}".join(jsonStr.rsplit("},", 1)),']') # Delete the last comma and close the object array
-
-# connect with the S3 service
-s3 = boto3.resource( S3_SERVICE, region_name = REGION )
-client = boto3.client( S3_SERVICE )
-
-#############   Post the Instances to S3 -- a json array publically readable on the Internet ###############
-
-location = client.get_bucket_location(Bucket=OBJECT_BUCK)['LocationConstraint']
-try:
-    s3.Object(OBJECT_BUCK, OBJECT_KEY).load()
-except botocore.exceptions.ClientError as e: 
-    if e.response['Error']['Code'] == "404": # file not found
-        client.put_object( 
-            Body = json.dumps(jsonStr, sort_keys='True', indent=4, default=str, separators=(',',': ')), 
-            Bucket = OBJECT_BUCK,
-            Key = OBJECT_KEY)
-        client.put_object_acl( Bucket = OBJECT_BUCK, Key = OBJECT_KEY, ACL = OBJECT_ACL)
-        url = "https://s3-%s.amazonaws.com/%s/%s"%(location, OBJECT_BUCK, OBJECT_KEY)
-        print (url)
-    else: # Exception
-        raise
-else: # file found
-    response = input('/%s/%s %s'%(OBJECT_BUCK, OBJECT_KEY, 'already exists, would you like to over-write it?\n'))
-    if re.match('[Yy][Ee]?[Ss]?',response):
-        client.put_object( 
-            Body = json.dumps(jsonStr, sort_keys='True', indent=4, default=str, separators=(',',': ')), 
-            Bucket = OBJECT_BUCK,
-            Key = OBJECT_KEY)
-        client.put_object_acl( Bucket = OBJECT_BUCK, Key = OBJECT_KEY, ACL = OBJECT_ACL)
-        url = 'https://s3-%s.amazonaws.com/%s/%s'%(location, OBJECT_BUCK, OBJECT_KEY)
-        print (url)
-
-#############   Query the json dictionary ###############
-
-jsonInstanceList = json.loads(jsonStr)
-srchStr = "[*].Reservations[*].Instances[0].Tags[0]"
-print(json.dumps(jmespath.search(srchStr,jsonInstanceList), sort_keys='True', indent=4, default=str, separators=(',',': ')))
+patent_xml = format_data (
+    ACL = acl, 
+    BUCKET = bucket, 
+    DATA_TYPE = data_type,
+    REGION = region,
+    PATH = path, 
+    ROOT_DIR = root_dir,
+    STORAGE = storage_class)
