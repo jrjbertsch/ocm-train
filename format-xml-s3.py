@@ -12,537 +12,1006 @@ from PIL import Image
 import re
 import sys
 
-#############   Define Classes  ###############
+################################################
+#############   INITIALIZE CLASS ###############
+################################################
 
-##### Data Format Class #####
-# User Interface
-# Upload patents to 's3' storage
-class storage_format :
-    __init__(self, { STORAGE: storage_class,
-         PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-    super().__init__(self, storage_class,
-        { PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-#def __init(self, **args):
-#    self.path = PurePath(args.get('PATH'))
-#    self.root_dir = args.get('ROOT_DIR', self.path.root())
-        self.acl = args[1].set_default(ACL: 'public-read')
-        self.bucket = args[1].set_default(BUCKET: '')
-        self.region = args[1].set_default(REGION: 'us-east-2')
-        self.path = args[1].set_default(PATH: PurePath(''))
-        self.root_dir = args[1].set_default(ROOT_DIR: PurePath(''))
-        self.storage_class = args[1].set_default(STORAGE_CLASS: 'file')
-        self.__set_format()
-        self.arg_list = {
-            'file':(self.path, self.format),
-            's3':(self.path, self.format, self.bucket, self.region ) }
-        if not self.__verify_arg_list() :
-            self.__del__()
-        instantiate_storage_format(
-            ACL = acl, 
-            BUCKET = bucket, 
-            DATA_TYPE = data_type,
-            REGION = region,
-            PATH = path, 
-            ROOT_DIR = root_dir,
-            STORAGE = storage_class)
-        def __del__(self):
-        def __verify_arg_list () :
-            if arg_list.get('file')[0].empty and arg_list.get('file')[1].empty :
-                'Critical Error: Missing data-format: path or data-type.'
-                valid_args = False
-            else if :
-                if arg_list.get('S3')[0].empty and arg_list.get('S3')[1].empty :
-                    'Critical Error: Missing data-format: path or data-type.'
-                    valid_args = False
-                else if arg_list.get('S3')[2].empty:
-                    'Critical Error: Missing bucket'
-                    valid_args = False
-                else if arg_list.get('S3')[3].empty :
-                    'Critical Error: Missing region: region.'
-                    valid_args = False
-                else :
-                    None
-            else :
-                valid_args = True
-            return(valid_args)         
-        def __set_format () :
-            if not self.path.empty() :
-                self.format = self.path.suffix.split('.',1)
-            else
-                self.format = args[1].set_default(DATA_TYPE: '')
+##### Initialize Arguments, subcommand parameters, variabes, constants and methods #####
 
-##### Instantiate  data format#####
+class _initialize() :
+    def __init__(self) :
 
-class  _instantiate_storage_format() :
-        __init__(self, { STORAGE: storage_class,
-            PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type }) :
-        self.acl = args[1].set_default(ACL: 'public-read')
-        self.bucket = args[1].set_default(BUCKET: '')
-        self.region = args[1].set_default(REGION: 'us-east-2')
-        self.path = args[1].set_default(PATH: PurePath(''))
-        self.root_dir = args[1].set_default(ROOT_DIR: '')
-        self.storage_class = args[1].set_default(STORAGE: 'file')
-        self.set_format()
+##### Initialize Body Forms -- Used by Derived Classes  #####
+        self.image = None
+        self.text = ''
+        self.tree = ''
 
-        self.gif = '[.]?[Gg][Ii][Ff]'
-        self.nb = '[.]?[Nn][Bb]'
-        self.png = '[.]?[Pp][Nn][Gg]'
-        self.rgb = '[.]?[Rr][Gg][Bb]'
-        self.text = '[.]?[Tt][Ee]?[x][Tt]'
-        self.tiff = '[.]?[Tt][Ii][Ff]'
-        self.xml = '[.]?[x][Mm][Ll]'
+##### Supported Storage-Format Patterns #####
+        self._gif_pattern = '[.]?[Gg][Ii][Ff]'
+        self._nb_pattern = '[.]?[Nn][Bb]'
+        self._png_pattern = '[.]?[Pp][Nn][Gg]'
+        self._rgb_pattern = '[.]?[Rr][Gg][Bb]'
+        self._text_pattern = '[.]?[Tt][Ee]?[x][Tt]'
+        self._tiff_pattern = '[.]?[Tt][Ii][Ff]'
+        self._xml_pattern = '[.]?[x][Mm][Ll]'
 
-        self.supported_atomic_formats = [ self.gif, self.nb, self.png, self.rgb, self.text, self.tiff ]
-        self.supported_complex_formats = [ self.xml ]
-        self.supported_formats = supported_atomic_formats + supported_complex_formats
-        self.supported_image_formats = { self.gif, self.png, self.rgb, self.tiff }
-        self.supported_text_streams = { self.nb, self.text }
+        self._supported_atomic_formats = [ self._gif_pattern, self._nb_pattern, self._png_pattern, self._rgb_pattern, self._text_pattern, self._tiff_pattern ]
+        self._supported_complex_formats = [ self._xml_pattern ]
+        self._supported_image_formats = [ self._gif_pattern, self._png_pattern, self._rgb_pattern, self._tiff_pattern ]
+        self._supported_storage_formats = supported_atomic_formats + supported_complex_formats 
+        self._supported_structured_data = [ self._xml_pattern ]
+        self._supported_text_streams = [ self._nb_pattern, self._text_pattern ]
 
-        self.supported_format_stores = {
-            '_%s_%s'(self.gif,'file'): _gif_file(args[1]),
-            '_%s_%s'(self.gif,'S3'): _gif_s3(args[1]),
-            '_%s_%s'(self.nb,'file'): _nb_file(args[1]),
-            '_%s_%s'(self.nb,'S3'): _nb_s3(args[1]),
-            '_%s_%s'(self.png,'file'): _png_file(args[1]),
-            '_%s_%s'(self.png,'S3'): _png_s3(args[1]),
-            '_%s_%s'(self.rgb,'file'): _rgb_file(args[1]),
-            '_%s_%s'(self.rgb,'S3'): _rgb_s3(args[1]),
-            '_%s_%s'(self.text,'file'): _text_file(args[1]),
-            '_%s_%s'(self.text,'S3'): _text_s3(args[1]),
-            '_%s_%s'(self.tiff,'file'): _tiff_file(args[1]),
-            '_%s_%s'(self.tiff,'S3'): _tiff_s3(args[1]),
-            '_%s_%s'(self.xml,'file'): _xml_file(args[1]),
-            '_%s_%s'(self.xml,'S3'): _xml_s3(args[1]) }
+#####  Supported Storage-Type Patterns #####
+        self._file_storage_pattern = '[Ff][Ii][Ll][Ee]'
+        self._s3_storage_pattern = '[Ss][3]'
+    
+        self._supported_storage_types =  [ self._file_storage_pattern, self._s3_storage_pattern ]
 
-        if not self.__verify_format() :
-            print ('%s::%s::'%('Critical Failure: Unsupported format.' 
-            self.__del__()
-        return (eval(supported_format_stores.get('_%s_%s'(self.format, self.storage_class)))
+#####  Complex Storage-Format Associations #####
+        self.__set_associates()
 
+_Errors['Usage'] = 'Usage: "Put" method accepts 0 - 2 arguments.
+            storage_format.put([[File-path], [Y/N], ...])
+
+            Description:
+            [First argument] - File-path for new or replacement file - Default:
+                    Storage_format.file-path.
+            [Y/N] - Replace existing file? -- Default [No].
+            All other arguments are ignored.'
+##### Define Methods #####
     def __del__(self) :
-    def __set_format () :
-        if not self.path.empty() :
-            self.format = self.path.suffix.split('.',1)
-        else
-            self.format = args[1].set_default(DATA_TYPE: '')
-    def __set_format() :       
-        if not self.path.empty() :
-            self.format = self.path.suffix()
-    def __verify_format()
-        _match = False
-        for _name in self.supported_formats :
-           if re.match(_name, self.format) :
-               _match = True
-        return (_match)  
-        self.path = PurePosixPath(path)
+        print ("terminating ...")
 
-class _base_form() :
-    __init__(self, { STORAGE:storage_class,
-        PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
+    def __set_associates() :       
+        self.associates = []
+    
+    def __set_storage_format() :       
+        if self.__verify_path() :
+            self.storage_format = str(self.path.suffix.rsplit('.',1)).lower()
+        elif self.__verify_storage_format() :
+            self._argv['FORMAT'] = self.storage_format = self.storage_format.lower()
 
-        self.acl = args[1].set_default(ACL: 'public-read')
-        self.bucket = args[1].set_default(BUCKET: '')
-        self.path = args[1].set_default(PATH: PurePath(''))
-        self.region = args[1].set_default(REGION: 'us-east-2')
-        self.root_dir = args[1].set_default(ROOT_DIR: '')
-        self.storage_class = args[1].set_default(STORAGE: 'file')
-        self.__set_format()
+    def __set_storage_type() :       
+        if self.__verify_storage_type() :
+                self._argv['STORAGE'] = self.storage_type = str(self.storage_type).lower()
+    
+    def __verify_storage_format() :
+        format_match = False
+        for format_pattern in self._supported_storage_formats :
+           if re.match(format_pattern, self.storage_format) :
+               format_match = True
+               break
+        return (format_match)  
 
-        self.gif = '[.]?[Gg][Ii][Ff]'
-        self.nb = '[.]?[Nn][Bb]'
-        self.png = '[.]?[Pp][Nn][Gg]'
-        self.rgb = '[.]?[Rr][Gg][Bb]'
-        self.text = '[.]?[Tt][Ee]?[x][Tt]'
-        self.tiff = '[.]?[Tt][Ii][Ff]'
-        self.xml = '[.]?[x][Mm][Ll]'
+    def __verify_storage_type() :
+        storage_match = False
+        for storage_pattern in self._supported_storage_types :
+           if re.match(storage_pattern, self.storage_type) :
+               storage_match = True
+               break
+        return (storage_match)  
 
-        self.supported_atomic_formats = [ self.gif, self.nb, self.png, self.rgb, self.text, self.tiff ]
-        self.supported_complex_formats = [ self.xml ]
-        self.supported_formats = supported_atomic_formats + supported_complex_formats
-        self.supported_image_formats = { self.gif, self.png, self.rgb, self.tiff }
-        self.supported_text_streams = { self.nb, self.text }
 
-    def __del__(self):
+################################################
+#############   STORAGE-FORMAT CLASS ###########
+################################################
+
+##### The Storage Format class is the Main class and #####
+##### the user interface to this class system. #####
+
+#    def __init__(self, ({ STORAGE:storage_type, BODY:body,
+
+#    def __init__(self, ({ STORAGE:storage_type, BODY:body,
+#        PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, FORMAT:data_format })) :
+class storage_format (_initialize) :
+    def __init__(self, **kwargs) :
+        super(storage_format,self).__init__()
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = kwargs.get('PATH', Path.PurePath(''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = kwargs.get('ROOT_DIR', Path.PurePath(''))
+        self.storage_type = kwargs.get('STORAGE', 'file')
+
+##### Initialize Variables #####
+        self.__set_storage_format()
+        self.__set_storage_type()
+
+##### Instanitate #####
+        return (_instantiate_interface(
+            ACL = self.acl, 
+            BODY = self.body, 
+            BUCKET = self.bucket, 
+            FORMAT = self.data_format,
+            REGION = self.region,
+            PATH = self.path, 
+            ROOT_DIR = self.root_dir,
+            STORAGE = self.storage_type))
+
+##### Define Methods #####
+        def __del__(self) :
+            super(storage_format, self).__del__() 
+
+################################################
+########## Instantiate Storage Class ###########
+################################################
+
+#####  Selects a Storage-Class/File-Format interface based #####
+##### on incoming parametrs #####
+
+class  _instantiate_interface(_initialize) :
+    def __init__(self, **kwargs) :
+        super(_instantiate_interface,self).__init__()
+
+        self._argv['ACL'] = self.acl = kwargs.get('ACL','public-read')
+        self._argv['BODY'] = self.body = kwargs.get('BODY',None)
+        self._argv['BUCKET'] = self.bucket = kwargs.get('BUCKET','')
+        self._argv['FORMAT'] = self.format = kwargs.get('(FORMAT','')
+        self._argv['PATH'] = self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self._argv['REGION'] = self.region = kwargs.get('REGION','us-east-2')
+        self._argv['ROOT_DIR'] = self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self._argv['STORAGE'] = self.storage = kwargs.get('STORAGE', 'file')
+
+##### Initialize Variables #####
+        self.__set_storage_format()
+        self.__set_storage_type()
+
+##### Verify Supported Storage and Format Capabilities #####
+        if not self.__verify_storage_format() :
+            print ('::%s::'%('Critical Failure: Unsupported file-format.' ))
+            self.__del__()
+        if not self.__verify_storage_type() :
+            print ('::%s::'%('Critical Failure: Unsupported storage-class.' ))
+            self.__del__()
+
+##### Instantiate Interface #####
+        self.__set_interface_name()
+        if hasattr(self, self._interface_name) :
+            self.__instantiate_interface()
+
+##### Define Methods #####
+    def __del__(self) :
+        super(_instantiate_interface, self).__del__() 
+
+##### Instantiate Interface Class #####
+    def __instanitate_interface():
+        return (getattr(self, self._interface_name)(self._argv))
+            else
+                return (None)
+##### Set Class Name #####
+    def __set_interface_name ()
+        self._interface_name = ('_%s_%s'(self.storage_type, self.storage_format)))
+
+###############################################
+############# BASE FORMAT CLASS ###############
+###############################################
+
+##### Derived from Initialize class static #####
+##### Manages file-format associatians #####
+##### on incoming parametrs #####
+
+class _base_format(_initialize) :
+    def __init__(self, **kwargs ) :
+        super(_base_format,self).__init__()
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = kwargs.get('PATH', Path.PurePath(''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = kwargs.get('ROOT_DIR', Path.PurePath(''))
+        self.storage_type = kwargs.get('STORAGE', 'file')
+
+##### Define Methods #####
+    def __del__(self) :
+        super(_base_format, self).__del__() 
         print ('Terminating ...')
-    def __set_format () :
-        if not self.path.empty() :
-            self.format = self.path.suffix.rsplit('.',1)
-        else
-            self.format = args[1].set_default(DATA_TYPE: '')
+
     def __verify_atomic_format() :
         format_match = False
-       for format_name in supported_atomic_formats :
-           if re.match(format_name, self.format ) :
-               format_match = True
-               break
+        for format_pattern in supported_atomic_formats :
+            if re.match(format_pattern, self.storage_format ) :
+                format_match = True
+                break
         return (format_match)  
+  
+    def __verify_body() :
+        if self.body == None
+            data_avaialble = False
+        else :
+            data_available = True
+        return(data_available)
+
     def __verify_complex_format() :
         format_match = False
-        for format_name in self.supported_complex_formats
-           if re.match(format_name, self.format) :
+        for format_pattern in self._supported_complex_formats :
+           if re.match(format_pattern, self.storage_format) :
                format_match = True
                break
         return (format_match)  
-    def __verify_format()
-        format_match = False
-        for format_name in self.supported_formats :
-           if re.match(format_name, self.format) :
-               format_match = True
-               break
-        return (format_match)  
+
     def __verify_gif() :
         format_match = False
-        if re.match(self.gif, self.format) :
+        if re.match(self._gif_pattern, self.storage_format) :
             format_match = True
         return (format_match)  
+
     def __verify_image() :
         format_match = False
-        for format_name in self.supported_image_formats :
-           if re.match(format_name, self.format) :
+        for format_pattern in self._supported_image_formats :
+           if re.match(format_pattern, self.storage_format) :
                format_match = True
                break
         return (format_match)  
+
     def __verify_nb() :
         format_match = False
-        if re.match(self.nb, self.format_name):
+        if re.match(self._nb_pattern, self.storage_format) :
             format_match = True
         return (format_match)  
+
     def __verify_path() :
-        data_available = False
-        if self.__verify_format() :
-            if self.path.exists :
-                data_available = True
+        if self.path.exists() :
+            data_available = True
+        else :
+            data_avaialble = False
         return(data_available)
+
     def __verify_png() :
         format_match = False
-        if re.match(self.png, self.format_name):
+        if re.match(self._png_pattern, self.storage_format) :
             format_match = True
         return (format_match)  
+
     def __verify_rgb() :
         format_match = False
-        if re.match(self.rgb, self.format_name):
+        if re.match(self._rgb_pattern, self.storage_format) :
             format_match = True
         return (format_match)  
-    def __verify_supported_format() :
+
+    def __verify_supported_storage_format() :
         format_match = False
-        for supported_format in self.supported_formats :
-           if re.match(supported_format, format_name):
+        for format_pattern in self._supported_formats :
+           if re.match(format_pattern, self.storage_format) :
                format_match = True
                break
         return (format_match)  
+
     def __verify_text() :
         format_match = False
-        if re.match(self.text, self.format) :
+        if re.match(self._text_pattern, self.storage_format) :
             format_match = True
         return (format_match)  
-    def __verify_text_stream()
+
+    def __verify_text_stream() :
         format_match = False
-        for format_name in self.supported_text_streams :
-           if re.match(format_name, self.format) :
+        for format_pattern in self._supported_text_streams :
+           if re.match(format_pattern, self.storage_format) :
                format_match = True
                break
         return (format_match)  
+
     def __verify_tiff() :
         format_match = False
-        if re.match(self.tiff,self.format) :
+        if re.match(self._tiff_pattern, self.storage_format) :
             format_match = True
         return (format_match)  
-    def __verify_xml(format_name) :
+
+    def __verify_xml() :
         format_match = False
-           if re.match(self.xml, format_name):
-               format_match = True
+        if re.match(self._xml_pattern, self.format_name) :
+            format_match = True
         return (format_match)  
 
-#### Base Format Class ####
-# A Atomic Format Class describes data formats which have no references to any other 
-# data formats. 
+    def get_stream(stream) :
+        if self.__verify_image() :
+            im = Image.open(io.BytesIO(stream))
+            self.image = self.body = im.load()
+            im.seek(0)
+        elif self.__verify_xml() :
+            self.tree = self.body = ET.fromstring(stream) 
+        elif self.__verify_text_streams :
+            self.text = self.body = stream 
 
-# The Data Store Class is derived from the File Format Base Class
-# It is responsible for format conversions, and I/O operations on supported data sets
-class _format_file(base_form) :
-    __init__(self, { STORAGE: storage_class,
-        PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-        super().__init__(self, 
-                { STORAGE = storage_class,
-             PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
+    def get_tiff2png (storage_format_object) :
+        if re.match (self._tiff_pattern, storage_format_object.storage_format) :
+            tiff_image = get_stream(storage_format_object.body)
+            rgb_image = tiff_image.convert('RGB')
+            png_image = rgb_image.convert('PNG')
+            storage_png_object = storage_format(STORAGE = storage_format_object.storage_type, FORMAT = 'PNG' )
+        return(storage_png_object.get_stream(png_image))
+
+###############################################
+############# FILE FORMAT CLASS ###############
+###############################################
+
+##### Derived from BASE FORMAT Class ############
+##### Manages 'file' storage-class and #####
+##### associated file-formats #####
+
+class _file_format(_base_format) :
+    def __init__(self, **kwargs) :
+        super(_file_format, self).__init__(**kwargs)
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.storage_type = kwargs.get(STORAGE,'file')
+
+#####  Set Content  ######
         self.__set_body()
+
+##### Define Methods #####
     def __del__(self) :
-        super(format_file, self).__del__() 
-    def __get_associated_files() :   
-        for format in supported_complex_formats :
-            if self.__verify_xml() :
-                 self.__get_xml_files
-    def __get_tiff2png (format_data) :
-        if re.match (self.tiff, format_data.format) :
-            if format_data.body == None :
-                if format_data.path.exists :
-                    with open(self.path, 'rb') as f :
-                        tiff_image = format_data.body = Image.open(io.BytesIO(f.read()))
-            if ( format_data.body != None ) :
-                rgb_image = tiff_image.convert('RGB')
-                png_image = rgb_image.convert('PNG')
-                png_data = storage_format(DATA_TYPE = 'PNG')
-        return(png_data.get(png_image))
-    def __get_xml_associates() : 
-        if self.__verify_xml() :
-            for im in self.tree.getroot().iter('img') :
-                im.path = PurePath('%s/%s'%(self.path.parents[0],im.get('file'))))
-                if im.path.exists()
-                    self.__set_xml_associate(PurePath('%s/%s'%(self.path.parents[0],im.path)))
-            for nb in self.path.parents[0].glob('*' + self.nb) :
-                self.__set_xml_associate(PurePath(nb))
-    def __set_body () :
+        super(_file_format, self).__del__() 
+
+    def __get_body () :
         if self.__verify_path() :
             if self.__verify_image() :
                 with open(self.path, 'rb') as f :
                     im = Image.open(io.BytesIO(f.read()))
                     self.image = self.body = im.load()
-                    im.close()
-            else if self.__verify_xml() :
-                self.tree = self.body = ET.parse(self.path)
-                self.__get_xml_associates()
-            else self.__verify_text_stream() :
+            elif self.__verify_xml() :
+                self.tree = self.body = ET.parse(self.path) 
+            elif self.__verify_text_stream() :
                 with open (self.path, 'r') as f :
                     self.text = self.body = f.read()
-                    f.close()
-        else
-            self.body = None
-    def __set_xml_associate(path) :
-        if self.__verify_xml() :
 
-            self.xml_files.append( { 'Format Data': storage_format(PATH=path)})
-    def get(stream) :
-        if self.__verify_image() :
-            im = Image.open(io.BytesIO(stream))
-            self.body = im.load()
-            im.close()
-        else if self.__verify_xml() :
-            self.tree = self.body.parse(stream) 
-        else if self.__verify_text_streams 
-                self.body = stream 
-        else
-            self.body = None
-#### GIF File Class ####
-class _gif_file(format_file) :
-    __init__(self, { STORAGE: storage_class,
-        PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-        super().__init__(self, { STORAGE = storage_class,
-             PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
+    def __set_body () :
+        if self.body == None :
+            self.__get_body
+            self.__update_associates
+
+    def get (path) :
+        if  Path.PurePath(path).exists() :
+            self.path = path
+            self.__set_body
+
+    def put (*args) :
+        replace = 'No'
+        self.__set_body()
+        if __verify_body() :
+            if args :
+                if len(args) >= 1  :
+                    self.path = Path.PurePath(args[0])
+                if len(args) >= 2  :
+                    replace = args[1]
+                if len(args) >= 3  :
+                    print('Warning extra arguments were ignored!')
+                    print (self._errors['Usage'])
+                if self.__verify_path() :
+                    if not re.match('[Yy][Ee]?[Ss]?',replace) : # Replace existing stored data? 
+                        response = input('%s:%s %s'%('PATH', self.path, ' exists, replace it? [Y/N]\n'))
+                        if re.match('[Yy][Ee]?[Ss]?',response) : # Request permission to replace stored data.
+                            root = self.tree.getroot()
+                            root.write(self.path, pretty_print=True)
+                            for key, s3_format_object in self.associates.items() :
+                                s3_format_object.put()
+                    else : # Replace existing stored data (pre-approved) 
+                        root = self.tree.getroot()
+                        root.write(self.path, pretty_print=True)
+                        for key, s3_format_object in self.associates.items() :
+                            s3_format_object.put()
+            else : # Put new file, nothing to replace
+                root = self.tree.getroot()
+                root.write(self.path, pretty_print=True)
+        else :
+            print ('Warning: Nothing to put()!')
+
+    def __update_associates() : 
+            parent_dir = Path.PurePath( '%s/%s'%(self.path.parents[0]))
+            for im in self.tree.getroot().iter('img') :
+                image_name = Path.PurePath(im.attrib['file'])
+                path = Path.PurePath( '%s/%s'%(parent_dir, image_name))
+                file_format_object = storage_format(STORAGE = 'file', PATH = self.path)
+                self.associates.append({'file-image':file_format_object})
+            for path in self.path.parents[0].glob('*' + self._nb_pattern) :
+                 file_nb_object = storage_format(STORAGE = 'file', PATH = path, )
+                 self.associates.append({ 'file-nb':file_nb_object})
+            print (self._errors['Usage'])
+
+###############################################
+############# FILE GIF CLASS ###############
+###############################################
+
+##### Derived from FILE FORMAT CLASS ############
+##### Interface for 'file' storage-class and #####
+##### associated GIF formats #####
+
+class _file_gif(file_format) :
+    def __init__(self, **kwargs) :
+        super(_file_gif, self).__init__(**kwargs)
+
+##### Verify Format #####
         if not self.__verify_gif() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.gif> file extension',self.ext)
+            print ('%s::%s::'%('Critical Failure: not a valid <.gif> file extension',self.ext))
             self.__del__()
-    def __del__(self) :
-        super(gif_file, self).__del__() 
 
-#### NB File Class ####
-class _nb_file(format_file) :
-    __init__(self, { STORAGE: storage_class,
-        PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-        super().__init__(self, { STORAGE = storage_class,
-             PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
+##### Define Methods #####
+    def __del__(self) :
+        super(_file_gif, self).__del__() 
+
+###############################################
+############# FILE NB CLASS ###############
+###############################################
+
+##### Derived from FILE FORMAT CLASS ############
+##### Interface for 'file' storage-class and #####
+##### associated NB formats #####
+
+class _file_nb(file_format) :
+    def __init__(self, **kwargs) :
+        super(_file_nb, self).__init__(**kwargs)
+
+##### Verify Format #####
         if not self.__verify_nb() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.nb> file extension',self.ext)
+            print ('%s::%s::'%('Critical Failure: not a valid <.nb> file extension',self.ext))
             self.__del__()
-    def __del__(self) :
-        super(nb_file, self).__del__() 
 
-#### PNG File Class ####
-class _png_file(format_file) :
-    __init__(self, { STORAGE: storage_class,
-        PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-        super().__init__(self, { STORAGE = storage_class,
-             PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
+##### Define Methods #####
+    def __del__(self) :
+        super(_file_nb, self).__del__() 
+
+###############################################
+############# FILE PNG CLASS ###############
+###############################################
+
+##### Derived from FILE FORMAT CLASS ############
+##### interface for 'file' storage-class and #####
+##### associated PNG formats #####
+
+class _file_png(file_format) :
+    def __init__(self, **kwargs) :
+        super(_file_png, self).__init__(**kwargs)
+
+##### Verify Format #####
         if not self.__verify_png() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.png> file extension',self.ext)
+            print ('%s::%s::'%('Critical Failure: not a valid <.png> file extension',self.ext))
             self.__del__()
-    def __del__(self) :
-        super(png_file, self).__del__() 
 
-#### RGB File Class ####
-class _rgb_file(format_file) :
-    __init__(self, { STORAGE: storage_class,
-        PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-        super().__init__(self, { STORAGE = storage_class,
-             PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
+##### Define Methods #####
+    def __del__(self) :
+        super(_file_png, self).__del__() 
+
+###############################################
+############# FILE RGB CLASS ###############
+###############################################
+
+##### Derived from FILE FORMAT CLASS ############
+##### interface for 'file' storage-class and #####
+##### associated RGB formats #####
+
+class _file_rgb(file_format) :
+    def __init__(self, **kwargs) :
+        super(_file_rgb, self).__init__(**kwargs)
+
+##### Verify Format #####
         if not self.__verify_rgb() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.rgb> file extension',self.ext)
+            print ('%s::%s::'%('Critical Failure: not a valid <.rgb> file extension',self.ext))
             self.__del__()
-    def __del__(self) :
-        super(rgb_file, self).__del__() 
 
-#### TIFF File Class ####
-class _tiff_file(format_file) :
-    __init__(self, { STORAGE: storage_class,
-        PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-        super().__init__(self, { STORAGE = storage_class,
-             PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
+##### Define Methods #####
+    def __del__(self) :
+        super(_file_rgb, self).__del__() 
+
+###############################################
+############# FILE TIFF CLASS ###############
+###############################################
+
+##### Derived from FILE FORMAT CLASS ############
+##### interface for 'file' storage-class and #####
+##### associated TIFF formats #####
+
+class _file_tiff(file_format) :
+    def __init__(self, **kwargs) :
+        super(_file_tiff, self).__init__(**kwargs)
+
+##### Verify Format #####
         if not self.__verify_tiff() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.tiff> file extension',self.ext)
+            print ('%s::%s::'%('Critical Failure: not a valid <.tiff> file extension',self.ext))
             self.__del__()
-    def __del__(self) :
-        super(tiff_file, self).__del__() 
 
-#### ML File Class ####
-class _xml_file(format_file) :
-    __init__(self, { STORAGE: storage_class,
-        PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-        super().__init__(self, { STORAGE = storage_class,
-             PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
+##### Define Methods #####
+    def __del__(self) :
+        super(_file_tiff, self).__del__() 
+
+###############################################
+############# FILE XML CLASS ###############
+###############################################
+
+##### Derived from FILE FORMAT CLASS ############
+##### interface for 'file' storage-class and #####
+##### associated XML formats #####
+
+class _file_xml(file_format) :
+    def __init__(self, **kwargs) :
+        super(_file_xml, self).__init__(**kwargs)
+
+##### Verify Format #####
         if not self.__verify_xml() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.xml> file extension',self.ext)
-            for format_data in self.xml_files :
-               del format_data 
+            print ('%s::%s::'%('Critical Failure: not a valid <.xml> file extension',self.ext))
             self.__del__()
+
+#####  Set Content  ######
+        self.__set_body()
+
+##### Define Methods #####
     def __del__(self) :
-        super(xml_file, self).__del__() 
+        super(_file_xml, self).__del__() 
 
-#### Object Store Class ####
+    def __get_body() :
+        if self.__verify_path() :
+            self.tree = self.body = ET.parse(self.path)
 
-# The Object Store Class is a derived class from data store class 
-#  objects stores use AWS S3 to perform I/O operations
-class _format_s3 (format_file) :
-    __init__(self, { STORAGE:storage_class,
-        PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-        super().__init__(self, { STORAGE = storage_class,
-             PATH:path, BUCKET:bucket, REGION:region, ROOT_DIR:root_dir, ACL:acl, DATA_TYPE:data_type })
-        self.__set_service()
+    def __set_body () :
+        if self.body == None :
+            self.__get_body()
+        if self.body != None :
+            self.__update_associates()
+
+
+    def get (*args) :
+        if args :
+            self.path = Path.PurePath(args[0])
+        self.__get_body()
+        if self.body != None :
+            self.__update_associates()
+
+    def put (*args) :
+        replace = 'No'
+        _replace = False
+        if args :
+            if len(args) >= 1  :
+                self.path = Path.PurePath(args[0])
+            if len(args) == 2  :
+                replace = args[1]
+            else :
+                print ('Usage: "Put" method accepts 0 - 2 arguments.')
+                print ('<[No arguments] [File-path], [Y/N] ...>')
+                print ('[First argument] - File-path for new or replacement file: Default:
+                        Storage_format object file-path used.')
+                print ('[Y/N] - Replace existing file is OK or not: Default is not OK.')
+                print ('All other arguments are ignored.')
+        if self.__verify_path() :
+            if _replace == False :
+                response = input('%s:%s %s'%('PATH', self.path, ' exists, replace it? [Y/N]\n'))
+                if re.match('[Yy][Ee]?[Ss]',response) : # user requests replacement
+                    root = self.tree.getroot()
+                    root.write(self.path, pretty_print=True)
+                    for key, s3_format_object in self.associates.items() :
+                        s3_format_object.put()
+            else : # replacement request was pre-approved
+                root = self.tree.getroot()
+                root.write(self.path, pretty_print=True)
+                for key, s3_format_object in self.associates.items() :
+                    s3_format_object.put()
+        else : # path doesn't exist -- write file to new path
+            root = self.tree.getroot()
+            root.write(self.path, pretty_print=True)
+            for key, s3_format_object in self.associates.items() :
+                s3_format_object.put()
+
+###############################################
+############# s3 FORMAT CLASS ###############
+###############################################
+
+##### Derived from FILE-FORMAT Class ############
+##### Manages 's3' storage-class and #####
+##### associated file-formats #####
+
+class _s3_format (_file_format) :
+    def __init__(self, **kwargs) :
+        super(_s3_format, self).__init__(**kwargs)
+
+##### Set Parameters ######
+        self.__set_key ()
 
 ##### Connect to the s3 Service ######
+        self.__set_service()
         s3 = boto3.resource( self.service, region_name = region )
-        client = boto3.client( S3_SERVICE )
+        client = boto3.client( s3_SERVICE )
         self.__set_location ()
 
-#####  Set arguments  ######
-        self.__set_bucket()
-        self.__set_key ()
+#####  Set Content  ######
         self.__set_uri()
         self.__set_body()
-        `
-#####  Put S3 Object  ######
-        self.__put_object()
 
-    def __del__(self):
-        super(object_store, self).__del__() 
-    def __get_s3_Object ()
-        if self.s3_object == None : # S3_object doesn't exist
-            try:
+#####  Define Methods ######
+    def __del__(self) :
+        super(_s3_format, self).__del__() 
+
+    def __get_body () :
+        if self.body == None : # s3_object doesn't exist
+            try :
                 s3.Object(self.bucket, self.key).load() #check to see if s3 object exists
-            except botocore.exceptions.ClientError as e: 
-                if e.response['Error']['Code'] == "404": # s3 object not found
-                     self.s3_object = None
-                else
+            except botocore.exceptions.ClientError as e : 
+                if e.response['Error']['Code'] == "404" : # s3 object not found
+                     print ( 's3 Object Not found' )
+                else :
                     raise
-            else: # s3 object found
-                self.s3_object = s3.Object(self.bucket, self.key).get()
-    def __get_xml_associates() : 
-        if self.__verify_xml() :
-            for im in self.tree.getroot().iter('img') :
-                im.attrib['file'] = PurePath(im.attrib['file']).suffix('png')
-                im.attrib['img-format'] = 'png'
-                parent =  im.getparent()
-                new_parent = ET.Element('a')
-                new_parent.extend('parent')
-                parent.append(new_parent)
-                new_parent.attrib['href'] = self.uri
-                path = PurePath( '%s/%s'%(self.path.parents[0],im.attrib['file'])
-                if path.exists :
-                    format_data = storage_format(STORAGE = 's3',
-                        PATH = self.path, 
-                        BUCKET = self.bucket,
-                        ROOT_DIR = self.root_dir )
-                    self.__set_xml_associate(format_data)))
-                self.body = self.tree
-            for path in self.path.parents[0].glob('*' + self.nb) :
-                format_data = storage_format(STORAGE = 's3',
-                    PATH = path,
-                    BUCKET = self.bucket,
-                    ROOT_DIR = self.root_dir )
-                self.__set_xml_associate(PurePath(format_data))
-    def __put_object () :
+            else : # s3 object found
+                self.body = s3.Object(self.bucket, self.key).get()
+
+    def __set_body () :
+        if self.body == None :
+            self.__get_body()
+
+    def __set_key () :     
+        self.key = Path.PureFilePath('%s/%s/%s'%(self.acl, self.root_dir, self.path))
+
+    def __set_location() :
+        self.location = client.get_bucket_location(Bucket=bucket)['LocationConstraint']
+
+    def __set_service() :
+        self.service = 's3'
+
+    def __set_uri () :
+        self.uri = 'https://s3-%s.amazonaws.com/%s/%s'%(self.location, self.bucket, self.key)
+
+    def get (uri) :
+        if uri.empty :
+           uri = self.uri
+        request = urllib.request.Request(uri)
+        try :
+            urllib.request.urlopen(request)
+        except urllib.error.URLError as e :
+            if request.getcode() == '404' : # s3 object not found
+                print ('%s:: %s ::'%('Not found error', self.uri))
+            else :
+                raise
+        else : # uri found
+            self.body = urllib.urlopen(self.uri).read()
+
+    def put (*args) :
+        replace = 'No'
+        _replace = False
+        if args :
+            if len(args) >= 1  :
+                self.path = Path.PurePath(args.get)
+            if len(args) == 2  :
+                replace = args[1]
+            else :
+                print ('Usage: "Put" method accepts 0 - 2 arguments.')
+                print ('<[No arguments] [uri], [Y/N] ...>')
+                print ('[First argument] - Uri for new or replacement file: Default:
+                        Storage_format object uri used.')
+                print ('[Y/N] - Replace existing file is OK or not: Default is not OK.')
+                print ('All other arguments are ignored.')
+        if self.__verify_path() :
+            if _replace == False :
+                response = input('%s:%s %s'%('PATH', self.path, ' exists, replace it? [Y/N]\n'))
+                if re.match('[Yy][Ee]?[Ss]',response) : # user requests replacement
+                    root = self.tree.getroot()
+                    root.write(self.path, pretty_print=True)
+                    for key, s3_format_object in self.associates.items() :
+                        s3_format_object.put(*args, **kwargs)
+            else : # replacement request was pre-approved
+                root = self.tree.getroot()
+                root.write(self.path, pretty_print=True)
+                for key, s3_format_object in self.associates.items() :
+                    s3_format_object.put("",replace)
+        else : # path doesn't exist -- write file to new path
+            root = self.tree.getroot()
+            root.write(self.path, pretty_print=True)
+            for key, s3_format_object in self.associates.items() :
+                s3_format_object.put()
         if self.body != None : # body exists
-            try:
+            try :
                 s3.Object(self.bucket, self.key).load() #check to see if s3 object exists
-            except botocore.exceptions.ClientError as e: 
-                if e.response['Error']['Code'] == "404": # s3 object not found
+            except botocore.exceptions.ClientError as e : 
+                if e.response['Error']['Code'] == '404' : # s3 object not found
                     client.put_object( self.body, Bucket = self.bucket, Key = self.key)
-                    client.put_object_acl( Bucket = self.bucket, Key = self.key, ACL = self.acl)
-                else
+                    clienobject_acl( Bucket = self.bucket, Key = self.key, ACL = self.acl)
+                else :
                     raise
-                if re.match('[Yy][Ee]?[Ss]?',response):
+                re = input('/%s/%s %s'%(OBJECT_BUCK, OBJECT_KEY, 'already exists, would you like to over-write it? [Y/N]\n'))
+                if re.match('[Yy][Ee]?[Ss]?',re) : # replace eixsiting file upon request
                     if self.__verify_path() :
                         client.put_object( self.body, Bucket = self.bucket, Key = self.key)
                         client.put_object_acl( Bucket = self.bucket, Key = self.key, ACL = self.acl)
-        else
-            self.body = None
+                        for key, s3_format_object in self.associates.items() :
+                            s3_format_object.put()
+        else : # new file - no existing file
+            client.put_object( self.body, Bucket = self.bucket, Key = self.key)
+            client.put_object_acl( Bucket = self.bucket, Key = self.key, ACL = self.acl)
+
+###############################################
+############# s3 GIF CLASS ###############
+###############################################
+
+##### Derived from s3_FORMAT Class ############
+##### Interface for 's3' storage-class and #####
+##### associated GIF file-formats #####
+class _s3_gif (_s3_format) :
+    def __init__(self, **kwargs) :
+        super(_s3_gif, self).__init__(**kwargs)
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.storage_type = kwargs.get(STORAGE,'file')
+
+        if not self.__verify_gif() :
+            print ('%s::%s::'%('Critical Failure: not a valid <.gif> file extension',self.ext))
+            self.__del__()
+
+##### define Methods #####
+    def __del__(self) :
+        super(_s3_gif, self).__del__() 
+
+###############################################
+############# s3 JPG CLASS ###############
+###############################################
+
+##### Derived from s3_FORMAT Class ############
+##### Interface for 's3' storage-class and #####
+##### associated JPG file-formats #####
+class _s3_jpg (_s3_format) :
+    def __init__(self, **kwargs) :
+        super(_s3_jpg, self).__init__(**kwargs)
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.storage_type = kwargs.get(STORAGE,'file')
+
+        if not self.__verify_jpg() :
+            print ('%s::%s::'%('Critical Failure: not a valid <.jpg> file extension',self.ext))
+            self.__del__()
+
+##### define Methods #####
+    def __del__(self) :
+        super(_s3_jpg, self).__del__() 
+
+###############################################
+############# s3 NB CLASS ###############
+###############################################
+
+##### Derived from s3_FORMAT Class ############
+##### Interface for 's3' storage-class and #####
+##### associated NB file-formats #####
+class _s3_nb (_s3_format) :
+    def __init__(self, **kwargs) :
+        super(_s3_nb, self).__init__(**kwargs)
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.storage_type = kwargs.get(STORAGE,'file')
+
+        if not self.__verify_nb() :
+            print ('%s::%s::'%('Critical Failure: not a valid <.nb> file extension',self.ext))
+            self.__del__()
+
+##### define Methods #####
+    def __del__(self) :
+        super(_s3_nb, self).__del__() 
+
+###############################################
+############# s3 PNG CLASS ###############
+###############################################
+
+##### Derived from s3_FORMAT Class ############
+##### Interface for 's3' storage-class and #####
+##### associated PNG file-formats #####
+class _s3_png (_s3_format) :
+    def __init__(self, **kwargs) :
+        super(_s3_png, self).__init__(**kwargs)
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.storage_type = kwargs.get(STORAGE,'file')
+
+        if not self.__verify_png() :
+            print ('%s::%s::'%('Critical Failure: not a valid <.png> file extension',self.ext))
+            self.__del__()
+
+##### define Methods #####
+    def __del__(self) :
+        super(_s3_png, self).__del__() 
+
+###############################################
+############# s3 RGB CLASS ###############
+###############################################
+
+##### Derived from s3_FORMAT Class ############
+##### Interface for 's3' storage-class and #####
+##### associated RGB file-formats #####
+class _s3_rgb (_s3_format) :
+    def __init__(self, **kwargs) :
+        super(_s3_rgb, self).__init__(**kwargs)
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.storage_type = kwargs.get(STORAGE,'file')
+
+        if not self.__verify_rgb() :
+            print ('%s::%s::'%('Critical Failure: not a valid <.rgb> file extension',self.ext))
+            self.__del__()
+
+##### define Methods #####
+    def __del__(self) :
+        super(_s3_rgb, self).__del__() 
+
+
+###############################################
+############# s3 TEXT CLASS ###############
+###############################################
+
+##### Derived from s3_FORMAT Class ############
+##### Interface for 's3' storage-class and #####
+##### associated TEXT file-formats #####
+class _s3_text (_s3_format) :
+    def __init__(self, **kwargs) :
+        super(_s3_text, self).__init__(**kwargs)
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.storage_type = kwargs.get(STORAGE,'file')
+
+        if not self.__verify_text() :
+            print ('%s::%s::'%('Critical Failure: not a valid <.t[e]xt> file extension',self.ext))
+            self.__del__()
+
+##### define Methods #####
+    def __del__(self) :
+        super(_s3_text, self).__del__() 
+
+###############################################
+############# s3 TIFF CLASS ###############
+###############################################
+
+##### Derived from s3_FORMAT Class ############
+##### Interface for 's3' storage-class and #####
+##### associated TIFF file-formats #####
+class _s3_tiff(_s3_format) :
+    def __init__(self, **kwargs) :
+        super(_s3_tiff, self).__init__(**kwargs)
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.storage_type = kwargs.get(STORAGE,'file')
+
+        if not self.__verify_tiff() :
+            print ('%s::%s::'%('Critical Failure: not a valid <.tif> file extension',self.ext))
+
+##### Set Content #####
+        self.__set_body()
+
+    def __del__(self) :
+        super(_s3_tiff, self).__del__() 
+
     def __set_body () :
-        if self.s3_object == None :
-            self.__get_s3_object()
-        if self.s3_object != None :
-            if self.__verify_image() :
-                im = Image.open(io.BytesIO(self.s3_object))
-                self.image = self.body = im.load()
-                im.close()
-        else if self.__verify_xml() :
-            with open(self.path, 'r') as f :
-                xml = Text.open(io.StringIO(f.read()))
-                self.tree = self.body = xml.parse()
-                self.__get_xml_associates()
-                xml.close()
-        else if self.__verify_text_formats() :
-            with open (self.path, 'r') as f :
-                self.text = self.body = f.read()
-                f.close()
-        else
-            self.body = None
-    def __set_bucket
-        self.bucket = PurePath(args[0].set_default(BUCKET: self.bucket)
-    def __set_service()
-        self.service = 's3'
-    def __set_location()
-        self.location = client.get_bucket_location(Bucket=bucket)['LocationConstraint']
-    def __set_xml_associate(format_data) :
-        if self.__verify_xml() :
-            if re.match(self.tiff, format_data.format) :
-                png_format_data = self.get_tiff2png(format_data)
-                self.xml_files.append( { 'Format Data': png_format_data)})
-            else :
-                self.xml_files.append( { 'Format Data': format_data)})
-    def __add_xml_images() :   
-        self.xml_images = self.xml_images.append(
-            'Object': im_object = xml_s3({im_path, self.root_dir, self.bucket, self.acl})
-    def __add_xml_object(path)               
-        if re.match(self.tiff,path.suffix) :
-            png_image = get_tif2png (im_path)
-        else
-            png_image = get_body
-        png_key = PurePath('%s/%s/%s'%(self.acl,self.root_dir,im_path.with_suffix(".PNG")))
-        post_object (image, self.bucket, png_key) :
-        uri = "https://s3-%s.amazonaws.com/%s/%s"%(self.location, self.bucket, png_key)
-        self.xml_images.append(
-            { 'Name': im_name,
-            'Object': im_object = object_store(im_path, self.root_dir, self.bucket, self.acl)})
-    def __set_key ():     
-        self.key = PureFilePath('%s/%s/%s'%(self.acl, self.root_dir, self.path))
-    def __set_uri ()
-        self.uri = "https://s3-%s.amazonaws.com/%s/%s"%(self.location, self.bucket, self.key)
-    def post_object (body, bucket, key) :
-        client.put_object( body, Bucket = self.bucket, Key = key)
-        client.put_object_acl( Bucket = self.bucket, Key = self.key, ACL = self.acl)
-    def __post_object () :
-        client.put_object( self.body, Bucket = self.bucket, Key = self.key)
-        client.put_object_acl( Bucket = self.bucket, Key = self.key, ACL = self.acl)
-        __set_uri ()
-    def post_xml_s3 (xml) :
-        if exclude-tiff == False : 
-            xml.tif = [{name,image},...]
-            for tif_name in xml.tif 
-                tif_file_path = xml_file_path.with_name('tif_file_name')
-                png_key = PureFilePath('%s/%s'(s3_dir,tif_file_path.with_suffix(".PNG")))
-                uri = post_image_s3 ( body, bucket, png_key, acl, s3, client, location) :
-                png_key = '%s/%s'%(OBJECT_ACL,PurePath(png.path))
-         return (xml)
-    def set_linked_image_files() : ...
-    def set_linked_image_uris() : ...
+        if self.body == None :
+            self.__get_body()
+        if self.body != None :
+            s3_png_object = self.get_tiff2png(self)
+            self.storage_format = s3_png_object.file_format
+            self.body = s3_png_object.body
+            self.path = self.path.with_suffix('PNG')
+            self.__set_key()
+            self.__set_uri()
+
+###############################################
+############# s3 XML CLASS ###############
+###############################################
+
+##### Derived from FILE-FORMAT Class ############
+##### Interface for 's3' storage-class and #####
+##### associated XML file-formats #####
+
+class _s3_xml (_s3_format) :
+    def __init__(self, **kwargs) :
+        super(_s3_xml, self).__init__(**kwargs)
+
+##### Receive Arguments #####
+        self.acl = kwargs.get('ACL','public-read')
+        self.body = kwargs.get('BODY',None)
+        self.bucket = kwargs.get('BUCKET','')
+        self.storage_format = kwargs.get('(FORMAT','')
+        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.region = kwargs.get('REGION','us-east-2')
+        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.storage_type = kwargs.get(STORAGE,'file')
+
+        if not self.__verify_xml() :
+            print ('%s::%s::'%('Critical Failure: not a valid <.xml> file extension',self.ext))
+
+##### Set Content #####
+        self.__set_body
+
+##### define Methods #####
+    def __del__(self) :
+        super(_s3_xml, self).__del__() 
+
+    def __set_body () :
+        if self.body == None :
+            self.__get_body()
+        if self.body != None :
+            self.tree = self.get_stream(self.body)
+            self.__update_associates()
+
+    def __update_associates() : 
+            parent_dir = Path.PurePath( '%s/%s'%(self.path.parents[0]))
+            root = self.tree.getroot()
+            for im in root.iter('img') :
+                image_name = Path.PurePath(im.attrib['file'])
+                path = Path.PurePath('%s/%s'%(parent_dir, image_name))
+                s3_image_object = storage_format(STORAGE = 's3',
+                    BUCKET = self.bucket,
+                    PATH = path, 
+                    REGION = self.region,
+                    ROOT_DIR = self.root_dir )
+                if path.exists() :
+                    if  re.match(self._tiff_pattern, image_name.suffix) :
+                        im.attrib['file'] = image_name.with_suffix('png')
+                        im.attrib['img-format'] = 'png'
+                    parent = im.getparent()
+                    new_parent = ET.Element('a')
+                    new_parent.extend('parent')
+                    parent.append(new_parent)
+                    new_parent.attrib['href'] = self.uri
+                self.body = self.tree
+                self.associates.append({'s3-image':s3_format_object})
+            for path in self.path.parents[0].glob('*' + self._nb_pattern) :
+                s3_nb_object = storage_format(STORAGE = 's3',
+                    BUCKET = self.bucket,
+                    PATH = path,
+                    REGION = self.region,
+                    ROOT_DIR = self.root_dir)
+                self.associates.append({'s3-nb':s3_nb_object})
+
 
 #############   Setup the patent environment   ###############
 local_home = os.getenv('HOME')
@@ -557,35 +1026,35 @@ parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(help='commands')
 
 ################# [file] storage class subcommand line #################
-file_parser = subparsers.add_parser(storage_class='file',help='specify storage_class as "file":')
-file_parser.add_argument('-f','--file_format', required=True, type=file, nargs=1, default = uspto_format) 
-    help='Specify file-path with extension else use file-format when file does not exist. Supported file-formats: gif, nb, png, rgb, text, tiff, xml'
+file_parser = subparsers.add_parser(storage_type='file',help='specify storage_type as "file":')
+file_parser.add_argument('-f','--file_format', required=True, type=file, nargs=1, default = uspto_format,
+    help='Specify file-path with extension else use file-format when file does not exist. Supported file-formats: gif, nb, png, rgb, text, tiff, xml')
 
 ################# [s3] storage class subcommand line #################
-s3_parser = subparsers.add_parser(storage_class='s3',help='specify storage_class as "s3":')
+s3_parser = subparsers.add_parser(storage_type='s3',help='specify storage_type as "s3":')
 s3_parser.add_argument('-a','--acl', required=True, type=str, nargs=1, default = s3_patent_acl,
     help='Specify s3 access control list')
 s3_parser.add_argument('-b','--bucket', required=True, type=str, nargs=1, default = s3_patent_bucket,
     help='Specify s3 bucket')
 s3_parser.add_argument('-d','--directory', required=True, type=str, nargs=1, default = s3_patent_root_dir,
     help='Specify s3 root directory')
-s3_parser.add_argument('-f','--file_format', required=True, type=file, nargs=1, default = uspto_file_format)
-    help='Specify file-path with extension else use file-format when file does not exist. Supported file-formats: gif, nb, png, rgb, text, tiff, xml'
+s3_parser.add_argument('-f','--file_format', required=True, type=file, nargs=1, default = uspto_file_format,
+    help='Specify file-path with extension else use file-format when file does not exist. Supported file-formats: gif, nb, png, rgb, text, tiff, xml')
 s3_parser.add_argument('-r','--region', required=True, type=str, nargs=1, default = s3_patent_region,
     help='Specify s3 region')
 
 if Path.PurePath(file_format).exists :
-    data_type = Path.PurePath(file_format).suffix()
+    data_format = Path.PurePath(file_format).suffix
     path = file_format
 else :
-    data_type = file_format
+    data_format = file_format
     path = ''
 
 patent_xml = format_data (
     ACL = acl, 
     BUCKET = bucket, 
-    DATA_TYPE = data_type,
+    FORMAT = data_format,
     REGION = region,
     PATH = path, 
     ROOT_DIR = root_dir,
-    STORAGE = storage_class)
+    STORAGE = storage_type)
