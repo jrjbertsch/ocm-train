@@ -11,6 +11,7 @@ from pathlib import Path
 from PIL import Image
 import re
 import sys
+import pdf2image
 
 ################################################
 #############   INITIALIZE CLASS ###############
@@ -51,14 +52,25 @@ class _initialize() :
 #####  Complex Storage-Format Associations #####
         self.__set_associates()
 
-_Errors['Usage'] = 'Usage: "Put" method accepts 0 - 2 arguments.
+        self._exceptions['fatal']['format'] = 'Critical Failure: Unsupported file-format.'
+        self._exceptions['fatal']['gif'] = 'Critical Failure: Not a valid <.gif> file extension'
+        self._exceptions['fatal']['jpg'] = 'Critical Failure: Not a valid <.jpg> file extension'
+        self._exceptions['fatal']['nb'] = 'Critical Failure: Not a valid <.nb> file extension'
+        self._exceptions['fatal']['png'] = 'Critical Failure: Not a valid <.png> file extension'
+        self._exceptions['fatal']['rgb'] = 'Critical Failure: Not a valid <.rgb> file extension'
+        self._exceptions['fatal']['text'] = 'Critical Failure: Not a valid <.text> file extension'
+        self._exceptions['fatal']['tiff'] = 'Critical Failure: Not a valid <.tiff> file extension'
+        self._exceptions['fatal']['xml'] = 'Critical Failure: Not a valid <.xml> file extension'
+        self._exceptions['fatal']['storage'] = 'Critical Failure: Unsupported storage-class.'
+        self._exceptions['Message']['usage'] = '"Put" method accepts 0 - 2 arguments.
             storage_format.put([[File-path], [Y/N], ...])
-
             Description:
             [First argument] - File-path for new or replacement file - Default:
                     Storage_format.file-path.
             [Y/N] - Replace existing file? -- Default [No].
             All other arguments are ignored.'
+        self._exceptions['warning']['put'] = 'Warning: Data missing, nothing "put"' 
+        self._exceptions['warning']['args'] = 'Warning: Extra arguments were ignored!')
 ##### Define Methods #####
     def __del__(self) :
         print ("terminating ...")
@@ -163,10 +175,10 @@ class  _instantiate_interface(_initialize) :
 
 ##### Verify Supported Storage and Format Capabilities #####
         if not self.__verify_storage_format() :
-            print ('::%s::'%('Critical Failure: Unsupported file-format.' ))
+            print (self._exceptions['fatal']['format'])
             self.__del__()
         if not self.__verify_storage_type() :
-            print ('::%s::'%('Critical Failure: Unsupported storage-class.' ))
+            print (self._exceptions['fatal']['storage'])
             self.__del__()
 
 ##### Instantiate Interface #####
@@ -369,6 +381,20 @@ class _file_format(_base_format) :
                 with open (self.path, 'r') as f :
                     self.text = self.body = f.read()
 
+    def __put_body () :
+        if len(self.path) != 0:
+            if self.__verify_image() :
+                self.image.save()
+            elif self.__verify_xml() :
+                root = self.tree.getroot()
+                root.write(self.path, pretty_print=True)
+                for file_format_object in self.associates :
+                    file_format_object.put()
+            elif self.__verify_text_stream() :
+                with open (path, 'w') as f :
+                    f.write(path)()
+         else :
+             print Missing data ...
     def __set_body () :
         if self.body == None :
             self.__get_body
@@ -389,26 +415,22 @@ class _file_format(_base_format) :
                 if len(args) >= 2  :
                     replace = args[1]
                 if len(args) >= 3  :
-                    print('Warning extra arguments were ignored!')
-                    print (self._errors['Usage'])
+                    print(self._exceptions['message']['usage'])
+                    print(self._exceptions['warning']['args'])
                 if self.__verify_path() :
                     if not re.match('[Yy][Ee]?[Ss]?',replace) : # Replace existing stored data? 
                         response = input('%s:%s %s'%('PATH', self.path, ' exists, replace it? [Y/N]\n'))
                         if re.match('[Yy][Ee]?[Ss]?',response) : # Request permission to replace stored data.
-                            root = self.tree.getroot()
-                            root.write(self.path, pretty_print=True)
-                            for key, s3_format_object in self.associates.items() :
-                                s3_format_object.put()
+                            if self.__verify_supported_storage_format() :
+                                self.__put_body()
                     else : # Replace existing stored data (pre-approved) 
-                        root = self.tree.getroot()
-                        root.write(self.path, pretty_print=True)
-                        for key, s3_format_object in self.associates.items() :
-                            s3_format_object.put()
+                        if self.__verify_supported_storage_format() :
+                            self.__put_body()
             else : # Put new file, nothing to replace
-                root = self.tree.getroot()
-                root.write(self.path, pretty_print=True)
+                if self.__verify_supported_storage_format() :
+                    self.__put_body()
         else :
-            print ('Warning: Nothing to put()!')
+            print(self._exceptions['warning']['put'])
 
     def __update_associates() : 
             parent_dir = Path.PurePath( '%s/%s'%(self.path.parents[0]))
@@ -420,7 +442,8 @@ class _file_format(_base_format) :
             for path in self.path.parents[0].glob('*' + self._nb_pattern) :
                  file_nb_object = storage_format(STORAGE = 'file', PATH = path, )
                  self.associates.append({ 'file-nb':file_nb_object})
-            print (self._errors['Usage'])
+            print(self._exceptions['warning']['usage'])
+            print(self._exceptions['warning']['args'])
 
 ###############################################
 ############# FILE GIF CLASS ###############
@@ -436,8 +459,7 @@ class _file_gif(file_format) :
 
 ##### Verify Format #####
         if not self.__verify_gif() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.gif> file extension',self.ext))
-            self.__del__()
+            print ( self._exceptions['fatal']['gif'])
 
 ##### Define Methods #####
     def __del__(self) :
@@ -457,7 +479,7 @@ class _file_nb(file_format) :
 
 ##### Verify Format #####
         if not self.__verify_nb() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.nb> file extension',self.ext))
+            print ( self._exceptions['fatal']['nb'])
             self.__del__()
 
 ##### Define Methods #####
@@ -478,7 +500,7 @@ class _file_png(file_format) :
 
 ##### Verify Format #####
         if not self.__verify_png() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.png> file extension',self.ext))
+            print ( self._exceptions['fatal']['png'])
             self.__del__()
 
 ##### Define Methods #####
@@ -499,12 +521,33 @@ class _file_rgb(file_format) :
 
 ##### Verify Format #####
         if not self.__verify_rgb() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.rgb> file extension',self.ext))
+            print ( self._exceptions['fatal']['rgb'])
             self.__del__()
 
 ##### Define Methods #####
     def __del__(self) :
         super(_file_rgb, self).__del__() 
+
+###############################################
+############# FILE TEXT CLASS ###############
+###############################################
+
+##### Derived from FILE FORMAT CLASS ############
+##### interface for 'file' storage-class and #####
+##### associated TEXT formats #####
+
+class _file_text(file_format) :
+    def __init__(self, **kwargs) :
+        super(_file_text, self).__init__(**kwargs)
+
+##### Verify Format #####
+        if not self.__verify_text() :
+            print ( self._exceptions['fatal']['text'])
+            self.__del__()
+
+##### Define Methods #####
+    def __del__(self) :
+        super(_file_text, self).__del__() 
 
 ###############################################
 ############# FILE TIFF CLASS ###############
@@ -520,7 +563,7 @@ class _file_tiff(file_format) :
 
 ##### Verify Format #####
         if not self.__verify_tiff() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.tiff> file extension',self.ext))
+            print ( self._exceptions['fatal']['tiff'])
             self.__del__()
 
 ##### Define Methods #####
@@ -541,7 +584,7 @@ class _file_xml(file_format) :
 
 ##### Verify Format #####
         if not self.__verify_xml() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.xml> file extension',self.ext))
+            print ( self._exceptions['fatal']['xml'])
             self.__del__()
 
 #####  Set Content  ######
@@ -569,42 +612,11 @@ class _file_xml(file_format) :
         if self.body != None :
             self.__update_associates()
 
-    def put (*args) :
-        replace = 'No'
-        _replace = False
-        if args :
-            if len(args) >= 1  :
-                self.path = Path.PurePath(args[0])
-            if len(args) == 2  :
-                replace = args[1]
-            else :
-                print ('Usage: "Put" method accepts 0 - 2 arguments.')
-                print ('<[No arguments] [File-path], [Y/N] ...>')
-                print ('[First argument] - File-path for new or replacement file: Default:
-                        Storage_format object file-path used.')
-                print ('[Y/N] - Replace existing file is OK or not: Default is not OK.')
-                print ('All other arguments are ignored.')
-        if self.__verify_path() :
-            if _replace == False :
-                response = input('%s:%s %s'%('PATH', self.path, ' exists, replace it? [Y/N]\n'))
-                if re.match('[Yy][Ee]?[Ss]',response) : # user requests replacement
-                    root = self.tree.getroot()
-                    root.write(self.path, pretty_print=True)
-                    for key, s3_format_object in self.associates.items() :
-                        s3_format_object.put()
-            else : # replacement request was pre-approved
-                root = self.tree.getroot()
-                root.write(self.path, pretty_print=True)
-                for key, s3_format_object in self.associates.items() :
-                    s3_format_object.put()
-        else : # path doesn't exist -- write file to new path
-            root = self.tree.getroot()
-            root.write(self.path, pretty_print=True)
-            for key, s3_format_object in self.associates.items() :
-                s3_format_object.put()
-
-###############################################
-############# s3 FORMAT CLASS ###############
+    def __update_associates() : 
+            parent_dir = Path.PurePath( '%s/%s'%(self.path.parents[0]))
+            for im in self.tree.getroot().iter('img') :
+                image_name = Path.PurePath(im.attrib['file'])
+                path = Path.PurePath( '%s/%s'%(parent_dir, image_name))
 ###############################################
 
 ##### Derived from FILE-FORMAT Class ############
@@ -749,7 +761,7 @@ class _s3_gif (_s3_format) :
         self.storage_type = kwargs.get(STORAGE,'file')
 
         if not self.__verify_gif() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.gif> file extension',self.ext))
+            print ( self._exceptions['fatal']['gif'])
             self.__del__()
 
 ##### define Methods #####
@@ -778,7 +790,7 @@ class _s3_jpg (_s3_format) :
         self.storage_type = kwargs.get(STORAGE,'file')
 
         if not self.__verify_jpg() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.jpg> file extension',self.ext))
+            print ( self._exceptions['fatal']['gif'])
             self.__del__()
 
 ##### define Methods #####
@@ -807,7 +819,7 @@ class _s3_nb (_s3_format) :
         self.storage_type = kwargs.get(STORAGE,'file')
 
         if not self.__verify_nb() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.nb> file extension',self.ext))
+            print ( self._exceptions['fatal']['gif'])
             self.__del__()
 
 ##### define Methods #####
@@ -836,7 +848,7 @@ class _s3_png (_s3_format) :
         self.storage_type = kwargs.get(STORAGE,'file')
 
         if not self.__verify_png() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.png> file extension',self.ext))
+            print ( self._exceptions['fatal']['gif'])
             self.__del__()
 
 ##### define Methods #####
@@ -865,7 +877,7 @@ class _s3_rgb (_s3_format) :
         self.storage_type = kwargs.get(STORAGE,'file')
 
         if not self.__verify_rgb() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.rgb> file extension',self.ext))
+            print ( self._exceptions['fatal']['gif'])
             self.__del__()
 
 ##### define Methods #####
@@ -895,7 +907,7 @@ class _s3_text (_s3_format) :
         self.storage_type = kwargs.get(STORAGE,'file')
 
         if not self.__verify_text() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.t[e]xt> file extension',self.ext))
+            print ( self._exceptions['fatal']['gif'])
             self.__del__()
 
 ##### define Methods #####
@@ -924,7 +936,7 @@ class _s3_tiff(_s3_format) :
         self.storage_type = kwargs.get(STORAGE,'file')
 
         if not self.__verify_tiff() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.tif> file extension',self.ext))
+            print ( self._exceptions['fatal']['tiff'])
 
 ##### Set Content #####
         self.__set_body()
@@ -966,7 +978,7 @@ class _s3_xml (_s3_format) :
         self.storage_type = kwargs.get(STORAGE,'file')
 
         if not self.__verify_xml() :
-            print ('%s::%s::'%('Critical Failure: not a valid <.xml> file extension',self.ext))
+            print ( self._exceptions['fatal']['xml'])
 
 ##### Set Content #####
         self.__set_body
