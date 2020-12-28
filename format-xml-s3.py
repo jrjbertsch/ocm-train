@@ -29,6 +29,9 @@ import sys
 class _initialize() :
     def __init__(self) :
 
+# Instanitiate Pathlib
+#        class pathlib.PurePath(os.environ.get('HOME'))
+        PurePath(os.environ.get('HOME'))
 ##### Initialize Body Forms -- Used by Derived Classes  #####
         self.image = None
         self.text = ''
@@ -52,7 +55,7 @@ class _initialize() :
         self._supported_text_streams = [ self._nb_pattern, self._text_pattern ]
 
 #####  Supported Storage-Type Patterns #####
-        self._posixFS_sorageMgr_pattern = '[Ff][Ii][Ll][Ee]'
+        self._posixFS_storageMgr_pattern = '[Ff][Ii][Ll][Ee]'
         self._s3_storageMgr_pattern = '[Ss][3]'
     
         self._supported_storageMgr_patterns =  [ self._posixFS_storageMgr_pattern, self._s3_storageMgr_pattern ]
@@ -105,7 +108,8 @@ class _initialize() :
         self.associates = []
 
     def __set_jpg() :       
-        return (self._format = "pe".join(self._format.split("p", 1))
+        self._format = "pe".join(self._format.split("p", 1))
+        return(self._format)
 
     def __set_storageMgr_format() :       
         if self.__verify_path() :
@@ -125,12 +129,13 @@ class _initialize() :
         if self.__verify_storageMgr() :
             self._argv['STORAGE_MGR'] = self._storageMgr = str(self._storageMgr).lower()
     def __set_txt() :       
-        return (self._format = "ex".join(self._format.split("x", 1))
+        self._format = "ex".join(self._format.split("x", 1))
+        return(self._format)
 
     def __set_tif() :       
-        return (self._format = "ff".join(self._format.split("f", 1))
+        self._format = "ff".join(self._format.split("f", 1))
+        return (self._format)
 
-    @classmethod
     def __verify_storageMgr_format() :
         format_match = False
         for format_pattern in self._supported_formats :
@@ -139,7 +144,6 @@ class _initialize() :
                break
         return (format_match)  
 
-    @classmethod
     def __verify_storageMgr() :
         storageMgr_match = False
         for storageMgr_pattern in self._supported_storageMgr_patterns :
@@ -157,20 +161,20 @@ class _initialize() :
 
 class storageMgr_format (_initialize) :
     def __init__(self, *args, **kwargs) :
-        super(format,self).__init__()
+        super(self).__init__()
 
 ##### Receive Arguments #####
         self._storageMgr = args[0]
-        if 'posixFS' == self._storageMgr
-            self.path = kwargs.get('PATH', Path.PurePath(''))
+        if 'posixFS' == self._storageMgr :
+            self.path = kwargs.get('PATH', PurePath(''))
             self._format = kwargs.get('(FORMAT','')
-        elif 's3' == self._storageMgr
+        elif 's3' == self._storageMgr :
             self.acl = kwargs.get('ACL','public-read')
             self.bucket = kwargs.get('BUCKET','')
             self._format = kwargs.get('(FORMAT','')
-            self.path = kwargs.get('PATH', Path.PurePath(''))
+            self.path = kwargs.get('PATH', PurePath(''))
             self.region = kwargs.get('REGION','us-east-2')
-            self.root_dir = kwargs.get('ROOT_DIR', Path.PurePath(''))
+            self.root_dir = kwargs.get('ROOT_DIR', PurePath(''))
         else :
             print (self._exceptions['message']['usage'])
             del(self)
@@ -179,29 +183,29 @@ class storageMgr_format (_initialize) :
         self.__set_storageMgr_format()
         self.__set_storageMgr()
 ##### Verify Interface #####
-        if 'posixFS' == self._storageMgr 
-        and self.__verify_storageMgr_format() :
+        if ( 'posixFS' == self._storageMgr
+            and self.__verify_storageMgr_format()) :
 ##### Instanitate #####
             return (_instantiate_interface(
                 self._storageMgr,
                 FORMAT = self.data_format,
-                PATH = self.path) 
-        elif 's3' == self._storageMgr 
-        and self.__verify_acl()
-        and self.__verify_bucket()
-        and self.__verify_region()
-        and self.__verify_storageMgr_format() :
-            return (_instantiate_interface(
-                self._storageMgr
-                ACL = self.acl, 
-                BUCKET = self.bucket, 
-                FORMAT = self.data_format,
-                REGION = self.region,
-                PATH = self.path, 
-                ROOT_DIR = self.root_dir,
+                PATH = self.path)) 
+        elif ( 's3' == self._storageMgr
+            and self.__verify_acl()
+            and self.__verify_bucket()
+            and self.__verify_region()
+            and self.__verify_storageMgr_format()) :
+                return (_instantiate_interface(
+                    self._storageMgr,
+                    ACL = self.acl, 
+                    BUCKET = self.bucket, 
+                    FORMAT = self.data_format,
+                    REGION = self.region,
+                    PATH = self.path, 
+                    ROOT_DIR = self.root_dir))
 ##### Define Methods #####
         def __del__(self) :
-            super(format, self).__del__() 
+            super().__del__() 
 
 ################################################
 ########## Instantiate Storage Class ###########
@@ -212,14 +216,14 @@ class storageMgr_format (_initialize) :
 
 class  _instantiate_interface(_initialize) :
     def __init__(self, *args, **kwargs) :
-        super(_instantiate_interface,self).__init__()
+        super(self).__init__()
         self._argv['STORAGE_MGR'] = self._storageMgr = args[0]
 
         self._argv['ACL'] = self.acl = kwargs.get('ACL','public-read')
         self._argv['BUCKET'] = self.bucket = kwargs.get('BUCKET','')
-        self._argv['PATH'] = self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self._argv['PATH'] = self.path = PurePath(kwargs.get('PATH', ''))
         self._argv['REGION'] = self.region = kwargs.get('REGION','us-east-2')
-        self._argv['ROOT_DIR'] = self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self._argv['ROOT_DIR'] = self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
 
         self._format = kwargs.get('(FORMAT','')
 
@@ -241,7 +245,7 @@ class  _instantiate_interface(_initialize) :
 
 ##### Define Methods #####
     def __del__(self) :
-        super(_instantiate_interface, self).__del__() 
+        super().__del__() 
 
 ##### Instantiate Interface Class #####
     def __instanitate_interface() :
@@ -263,23 +267,23 @@ class  _instantiate_interface(_initialize) :
 
 class _stream_format(_initialize) :
     def __init__(self, *args, **kwargs ) :
-        super(_stream_format,self).__init__()
+        super(self).__init__()
         self._argv['STORAGE_MGR'] = self._storageMgr = args[0]
 
 ##### Receive Arguments #####
         self._argv['ACL'] = self.acl = kwargs.get('ACL','public-read')
         self._argv['BUCKET'] = self.bucket = kwargs.get('BUCKET','')
         self._argv['FORMAT'] = self._format = kwargs.get('(FORMAT','')
-        self._argv['PATH'] = self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self._argv['PATH'] = self.path = PurePath(kwargs.get('PATH', ''))
         self._argv['REGION'] = self.region = kwargs.get('REGION','us-east-2')
-        self._argv['ROOT_DIR'] = self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self._argv['ROOT_DIR'] = self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
 
 ##### Set storage Type, and format #####
         self.__set_storageMgr_format()
         self.__set_storageMgr()
 ##### Define Methods #####
     def __del__(self) :
-        super(_stream_format, self).__del__() 
+        super().__del__() 
         print ('Terminating ...')
 
     def __set_storageMgr_format() :       
@@ -292,16 +296,14 @@ class _stream_format(_initialize) :
         if self.__verify_storageMgr() :
             self._argv['STORAGE_MGR'] = self._storageMgr = str(self._storageMgr).lower()
 
-    @classmethod
     def __verify_atomic_storageMgr_format() :
         format_match = False
         for format_pattern in supported_atomic_formats :
-            if re.match(format_pattern, self._format ) :
+            if re.match(format_pattern, self._format) :
                 format_match = True
                 break
         return (format_match)  
   
-    @classmethod
     def __verify_body() :
         if self.body == None :
             data_avaialble = False
@@ -309,7 +311,6 @@ class _stream_format(_initialize) :
             data_available = True
         return(data_available)
 
-    @classmethod
     def __verify_complex_storageMgr_format() :
         format_match = False
         for format_pattern in self._supported_complex_formats :
@@ -318,22 +319,19 @@ class _stream_format(_initialize) :
                break
         return (format_match)  
 
-    @classmethod
     def __verify_gif() :
         format_match = False
         if re.match(self._gif_pattern, self._format) :
             format_match = True
         return (format_match)  
 
-    @classmethod
     def __verify_jpeg() :
         format_match = False
-        x = "".join(.self._format.rsplit("e", 1)) # Delete the 'e' in jpeg 
+        x = "".join(self._format.rsplit("e", 1)) # Delete the 'e' in jpeg 
         if re.match(self._gif_pattern, self._format) :
             format_match = True
         return (format_match)  
 
-    @classmethod
     def __verify_image() :
         format_match = False
         for format_pattern in self._supported_image_formats :
@@ -342,14 +340,12 @@ class _stream_format(_initialize) :
                break
         return (format_match)  
 
-    @classmethod
     def __verify_nb() :
         format_match = False
         if re.match(self._nb_pattern, self._format) :
             format_match = True
         return (format_match)  
 
-    @classmethod
     def __verify_path() :
         if self.path.exists() :
             data_available = True
@@ -357,13 +353,11 @@ class _stream_format(_initialize) :
             data_avaialble = False
         return(data_available)
 
-    @classmethod
     def __verify_png() :
         format_match = False
         if re.match(self._png_pattern, self._format) :
             format_match = True
     
-    @classmethod
     def __verify_storageMgr_format() :
         format_match = False
         for format_pattern in self._supported_formats :
@@ -372,7 +366,6 @@ class _stream_format(_initialize) :
                break
         return (format_match)  
 
-    @classmethod
     def __verify_storageMgr() :
         storageMgr_match = False
         for storageMgr_pattern in self._supported_storageMgrs :
@@ -386,20 +379,20 @@ class _stream_format(_initialize) :
 ##########  POSIXFS FORMAT CLASS ###########
 ################################################
 ##### Derived from BASE FORMAT CLASS ############
-##### Methods for 'posixFS' storage-manager and #####
+##### Methods for '_posixFS' storage-manager and #####
 ##### all associated formats #####
-class  posixFS_format(_stream_format) :
+class  _posixFS_format(_stream_format) :
     def __init__(self, *args, **kwargs) :
-        super(_instantiate_interface,self).__init__()
+        super(self).__init__()
         self._argv['STORAGE_MGR'] = self._storageMgr = args[0]
 
 ##### Receive Arguments #####
         self._argv['ACL'] = self.acl = kwargs.get('ACL','public-read')
         self._argv['BUCKET'] = self.bucket = kwargs.get('BUCKET','')
         self._argv['FORMAT'] = self._format = kwargs.get('(FORMAT','')
-        self._argv['PATH'] = self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self._argv['PATH'] = self.path = PurePath(kwargs.get('PATH', ''))
         self._argv['REGION'] = self.region = kwargs.get('REGION','us-east-2')
-        self._argv['ROOT_DIR'] = self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self._argv['ROOT_DIR'] = self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
 
 
 ##### Verify Supported Storage and Format Capabilities #####
@@ -415,29 +408,30 @@ class  posixFS_format(_stream_format) :
 
 ##### Define Methods #####
     def __del__(self) :
-        super(_stream_format, self).__del__() 
+        super().__del__() 
 
-    def __get_body () :
+    def __get_body() :
         if self.body == None : # s3_object doesn't exist
-            if self.__verify_path() :
-                if self.__verify_image() :
-                    with Image.open(self.path) as im :
-                        self.image = self.body = im.load()
+            if _posixFS.__verify_path() :
+                if _posixFS.__verify_image() :
+                    with Image.open(_posixFS.path) as im :
+                        self.body = self.image = im.load()
                         im.seek(0) 
+#                        self._in_string = ''  # A base64 image received from s3, not relevant here
                 elif self.__verify_xml() :
                     self.tree = self.body = ET.parse(self.path)
                 elif self.__verify_text() :
                     with open(self.path,'r') as f :
                         self.text = self.body = f.read()
-                else
+                else :
                     self.body = None
-           else
-               self.body = None
+            else :
+                self.body = None
 
-    def __put_body()
+    def __put_body() :
         if len(self.path) != 0:
             if self.__verify_image() :
-                self.image.save()
+                self.image.save(_posixFS.path, _posixFS._format)
             elif self.__verify_xml() :
                 root = self.tree.getroot()
                 root.write(self.path, pretty_print=True)
@@ -457,19 +451,19 @@ class  posixFS_format(_stream_format) :
 
     def __update_associates() : 
         if self.__verify_xml() :
-            parent_dir = Path.PurePath( '%s/%s'%(self.path.parents[0]))
+            parent_dir = PurePath( '%s/%s'%(self.path.parents[0]))
             for im in self.tree.getroot().iter('img') :
-                image_name = Path.PurePath(im.attrib['file'])
-                path = Path.PurePath( '%s/%s'%(parent_dir, image_name))
+                image_name = PurePath(im.attrib['file'])
+                path = PurePath( '%s/%s'%(parent_dir, image_name))
                 if path.exists() :
-                    format_object = storageMgr_format('posixFS', PATH = path)
+                    format_object = storageMgr_format('_posixFS', PATH = path)
                     self.associates.append(format_object)
             for path in self.path.parents[0].glob('*' + self._nb_pattern) :
-                 posixFS_nb_object = storageMgr_format('posixFS', PATH = path, )
-                 self.associates.append(posixFS_nb_object)
+                 _posixFS_nb_object = storageMgr_format('_posixFS', PATH = path, )
+                 self.associates.append(_posixFS_nb_object)
 
     def get (path) :
-        if  Path.PurePath(path).exists() :
+        if  PurePath(path).exists() :
             self.path = path
             self.__set_body
 
@@ -479,7 +473,7 @@ class  posixFS_format(_stream_format) :
         if __verify_body() :
             if args :
                 if len(args) >= 1  :
-                    self.path = Path.PurePath(args[0])
+                    self.path = PurePath(args[0])
                 if len(args) >= 2  :
                     replace = args[1]
                 if len(args) >= 3  :
@@ -504,12 +498,12 @@ class  posixFS_format(_stream_format) :
 ###############################################
 
 ##### Derived from POSIX-FS FORMAT CLASS ############
-##### Interface for 'posixFS' storage-class and #####
+##### Interface for '_posixFS' storage-class and #####
 ##### associated GIF formats #####
 
-class _posixFS_gif(_format) :
+class _posixFS_gif(_stream_format) :
     def __init__(self, **kwargs) :
-        super(_posixFS_gif, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Verify Format #####
         if not self.__verify_gif() :
@@ -517,19 +511,19 @@ class _posixFS_gif(_format) :
 
 ##### Define Methods #####
     def __del__(self) :
-        super(_posixFS_gif, self).__del__() 
+        super().__del__() 
 
 ###############################################
 ############# POSIX-FS NB CLASS ###############
 ###############################################
 
 ##### Derived from POSIX-FS FORMAT CLASS ############
-##### Interface for 'posixFS' storage-class and #####
+##### Interface for '_posixFS' storage-class and #####
 ##### associated NB formats #####
 
-class _posixFS_nb(_format) :
+class _posixFS_nb(_stream_format) :
     def __init__(self, **kwargs) :
-        super(_posixFS_nb, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Verify Format #####
         if not self.__verify_nb() :
@@ -538,19 +532,19 @@ class _posixFS_nb(_format) :
 
 ##### Define Methods #####
     def __del__(self) :
-        super(_posixFS_nb, self).__del__() 
+        super().__del__() 
 
 ###############################################
 ############# POSIX-FS PNG CLASS ###############
 ###############################################
 
 ##### Derived from POSIX-FS FORMAT CLASS ############
-##### interface for 'posixFS' storage-class and #####
+##### interface for '_posixFS' storage-class and #####
 ##### associated PNG formats #####
 
-class _posixFS_png(_format) :
+class _posixFS_png(_stream_format) :
     def __init__(self, **kwargs) :
-        super(_posixFS_png, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Verify Format #####
         if not self.__verify_png() :
@@ -559,19 +553,19 @@ class _posixFS_png(_format) :
 
 ##### Define Methods #####
     def __del__(self) :
-        super(_posixFS_png, self).__del__() 
+        super().__del__() 
 
 ###############################################
 ############# POSIX-FS RGB CLASS ###############
 ###############################################
 
 ##### Derived from POSIX-FS FORMAT CLASS ############
-##### interface for 'posixFS' storage-class and #####
+##### interface for '_posixFS' storage-class and #####
 ##### associated RGB formats #####
 
-class _posixFS_rgb(_format) :
+class _posixFS_rgb(_stream_format) :
     def __init__(self, **kwargs) :
-        super(_posixFS_rgb, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Verify Format #####
         if not self.__verify_rgb() :
@@ -580,19 +574,19 @@ class _posixFS_rgb(_format) :
 
 ##### Define Methods #####
     def __del__(self) :
-        super(_posixFS_rgb, self).__del__() 
+        super().__del__() 
 
 ###############################################
 ############# POSIX-FS TEXT CLASS ###############
 ###############################################
 
 ##### Derived from POSIX-FS FORMAT CLASS ############
-##### interface for 'posixFS' storage-class and #####
+##### interface for '_posixFS' storage-class and #####
 ##### associated TEXT formats #####
 
-class _posixFS_text(_format) :
+class _posixFS_text(_stream_format) :
     def __init__(self, **kwargs) :
-        super(_posixFS_text, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Verify Format #####
         if not self.__verify_text() :
@@ -601,19 +595,19 @@ class _posixFS_text(_format) :
 
 ##### Define Methods #####
     def __del__(self) :
-        super(_posixFS_text, self).__del__() 
+        super().__del__() 
 
 ###############################################
 ############# POSIX-FS TIFF CLASS ###############
 ###############################################
 
 ##### Derived from POSIX-FS FORMAT CLASS ############
-##### interface for 'posixFS' storage-class and #####
+##### interface for '_posixFS' storage-class and #####
 ##### associated TIFF formats #####
 
-class _posixFS_tiff(_format) :
+class _posixFS_tiff(_stream_format) :
     def __init__(self, **kwargs) :
-        super(_posixFS_tiff, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Verify Format #####
         if not self.__verify_tiff() :
@@ -622,19 +616,19 @@ class _posixFS_tiff(_format) :
 
 ##### Define Methods #####
     def __del__(self) :
-        super(_posixFS_tiff, self).__del__() 
+        super().__del__() 
 
 ###############################################
 ############# POSIX-FS XML CLASS ###############
 ###############################################
 
 ##### Derived from POSIX-FS FORMAT CLASS ############
-##### interface for 'posixFS' storage-class and #####
+##### interface for '_posixFS' storage-class and #####
 ##### associated XML formats #####
 
-class _posixFS_xml(_format) :
+class _posixFS_xml(_stream_format) :
     def __init__(self, **kwargs) :
-        super(_posixFS_xml, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Verify Format #####
         if not self.__verify_xml() :
@@ -645,7 +639,7 @@ class _posixFS_xml(_format) :
 
 ##### Define Methods #####
     def __del__(self) :
-        super(_posixFS_xml, self).__del__() 
+        super().__del__() 
 
     def __get_body() :
         if self.__verify_path() :
@@ -660,34 +654,34 @@ class _posixFS_xml(_format) :
 
     def get (*args) :
         if args :
-            self.path = Path.PurePath(args[0])
+            self.path = PurePath(args[0])
         self.__get_body()
         if self.body != None :
             self.__update_associates()
 
     def __update_associates() : 
-            parent_dir = Path.PurePath( '%s/%s'%(self.path.parents[0]))
+            parent_dir = PurePath( '%s/%s'%(self.path.parents[0]))
             for im in self.tree.getroot().iter('img') :
-                image_name = Path.PurePath(im.attrib['posixFS'])
-                path = Path.PurePath( '%s/%s'%(parent_dir, image_name))
+                image_name = PurePath(im.attrib['posixFS'])
+                path = PurePath( '%s/%s'%(parent_dir, image_name))
 
 ###############################################
 ##### Derived from POSIX-FS-FORMAT Class ############
 ##### Manages 's3' storage-class and #####
 ##### associated file-formats #####
 
-class s3_format (_posixFS_format) :
+class _s3_format (_posixFS_format) :
     def __init__(self, *args, **kwargs) :
-        super(_s3_format, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._storageMgr = args[0]
 
 ##### Receive Key word Arguments #####
         self.acl = kwargs.get('ACL','public-read')
         self.bucket = kwargs.get('BUCKET','')
         self._format = kwargs.get('(FORMAT','')
-        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.path = PurePath(kwargs.get('PATH', ''))
         self.region = kwargs.get('REGION','us-east-2')
-        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
 
 ##### Set Parameters ######
         self.__set_key ()
@@ -705,7 +699,7 @@ class s3_format (_posixFS_format) :
 
 #####  Define Methods ######
     def __del__(self) :
-        super(_s3_format, self).__del__() 
+        super().__del__() 
 
     def __get_associates () :                    
          parent_path = self.path.parents[0]
@@ -713,16 +707,16 @@ class s3_format (_posixFS_format) :
          parent_uri = 'https://s3-%s.amazonaws.com/%s/%s'%(self.location, self.bucket, parent_key)
          response = client.list_objects(Bucket=self.bucket, Prefix=parent_uri)
          for uri_name in response :
-             object_name = uri_name.rsplit('/',1)[1].tolower()
+             object_name = uri_name.rsplit('/',1)[1].lower()
              if re.match('*' + self._nb_pattern, object_name) :
                  path = '%s/%s'%(parent_key, object_name) 
                  nb_object = storageMgr_format('s3', BUCKET = self.bucket, PATH = path)
                  self.associates.append(nb_object)
              else :
                  image_list.append(object_name)
-         image_tags = self.tree.getroot().iter('img') :
+         image_tags = self.tree.getroot().iter('img')
          for tag in image_tags :
-             image_name = tag.attrib['file'].tolower()
+             image_name = tag.attrib['file'].lower()
              image_stack.push(image_name)
          while image_stack :
              image_name = image_stack.pop()
@@ -739,58 +733,63 @@ class s3_format (_posixFS_format) :
             s3.Object(self.bucket, self.key).load() #check to see if s3 object exists
         except botocore.exceptions.ClientError as e : 
             if e.response['Error']['Code'] == "404" : # s3 object not found
-                if posixFS_format.path.exists() :
-                    self.__update_body()  # posixFS file found, upload s3_object
+                if _posixFS_format.path.exists() :
+                    self.__upload()
+                    self.__update_body()  # _posixFS file found, upload s3_object
 #                print(self._exceptions['warning']['s3_not_found'] )
             else :
                 raise
         else : # s3 object found
-            self._in_string = s3.Object(self.bucket, self.key).get()
+            self._in_string = s3.Object(self.bucket, self.key).get() #s3 does'nt consume or send binary informationn
             self.__update_body() 
                     
     def __put_body () :
         if len(self.path) != 0:
             if self.__verify_image() :
-#                self.image.save()
+                buffered = BytesIO()
+                self.image.save(buffered, self.format)
+                self._out_string = base64.b64encode(buffered.getvalue())
+                self.__put_object() 
             elif self.__verify_xml() :
-#                root = self.tree.getroot()
-#                root.write(self.path, pretty_print=True)
-#                for format_object in self.associates :
-#                    format_object.put()
+                root = self.tree.getroot()
+                self._out_string = self.tree.tostring(root, pretty_print=True)
+                self.__put_object() 
+                for _s3_format_object in self.associates :
+                    _s3_format_object.__put_body()
             elif self.__verify_text_stream() :
-#                with open (path, 'w') as f :
-#                    f.write(path)()
+                self._out_string = self.body()
+                self.__put_object()
         else :
             print (self._exceptions['fatal']['nopath'])
 
 # Put an s3 object    
-   def __put_object() : 
-            try :
-                s3.Object(self.bucket, self.key).load()
-                except botocore.exceptions.ClientError as e : 
-                    if e.response['Error']['Code'] == "404" : # file not found
-                        client.put_object( 
-                            Body = self._out_string,
-                            Bucket = self.bucket,
-                            Key = self.key)
-                        client.put_object_acl( Bucket = self.bucket, Key = self.key, ACL = self.acl)
-                    else : # Exception
-                        raise
-                else : # file found
-                    response = input('/%s/%s %s'%(self.bucket, self.key, 'already exists, would you like to over-write it?\n'))
-                    if re.match('[Yy][Ee]?[Ss]?',response) :
-                        client.put_object( 
-                            Body = self._out_string,
-                            Bucket = self.bucket,
-                            Key = self.key)
-                        client.put_object_acl( Bucket = self.bucket, Key = self.key, ACL = self.acl)
+    def __put_object() : 
+        try :
+            s3.Object(self.bucket, self.key).load()
+        except botocore.exceptions.ClientError as e : 
+            if e.response['Error']['Code'] == "404" : # file not found
+                client.put_object( 
+                    Body = self._out_string,
+                    Bucket = self.bucket,
+                    Key = self.key)
+                client.put_object_acl( Bucket = self.bucket, Key = self.key, ACL = self.acl)
+            else : # Exception
+                raise
+        else : # file found
+            response = input('/%s/%s %s'%(self.bucket, self.key, 'already exists, would you like to over-write it?\n'))
+            if re.match('[Yy][Ee]?[Ss]?',response) :
+                client.put_object( 
+                    Body = self._out_string,
+                    Bucket = self.bucket,
+                    Key = self.key)
+                client.put_object_acl( Bucket = self.bucket, Key = self.key, ACL = self.acl)
 
     def __set_body () :
         self.__get_body()
         self.__update_associates()
 
     def __set_key() :     
-        self.key = Path.PurePath('%s/%s/%s'%(self.acl, self.root_dir, self.path))
+        self.key = PurePath('%s/%s/%s'%(self.acl, self.root_dir, self.path))
 
     def __set_location() :
         self.location = client.get_bucket_location(Bucket=bucket)['LocationConstraint']
@@ -807,7 +806,7 @@ class s3_format (_posixFS_format) :
                 s3.Object(self.bucket, self.key).load() #check to see if s3 object exists
             except botocore.exceptions.ClientError as e : 
                 if e.response['Error']['Code'] == "404" : # s3 object not found
-                    if posixFS_format.__verify_path() :
+                    if _posixFS_format.__verify_path() :
                         self.__upload()
                         self.__get_associates()
                 else :
@@ -815,52 +814,73 @@ class s3_format (_posixFS_format) :
             else : # s3 object found
                 self.__get_associates()
 
-    def __update_body()
-            if self.__verify_image() :
-#                im = Image.open(BytesIO(body))
-#                self.image = self.body = im.load()
-#                im.seek(0)
-            elif self.__verify_xml() :
-                self.__upload()
-                root = ET.tree.fromstring(self._in_string)
-                self.tree = self.body = ET.tostring(root)
-            elif self.__verify_text() :
-#                self.text = self.body = body
+    def __update_body() :
+        if self.__verify_image() :
+            im = Image.open(BytesIO(self._in_string))
+            self.image = self.body = im.load()
+            im.seek(0)
+        elif self.__verify_xml() :
+            root = ET.tree.fromstring(self._in_string)
+            self.tree = self.body = ET.tostring(root)
+        elif self.__verify_text() :
+                self.text = self.body = self._in_string
+        try :
+            s3.Object(self.bucket, self.key).load() #check to see if s3 object exists
+        except botocore.exceptions.ClientError as e : 
+            if e.response['Error']['Code'] == "404" : # s3 object not found
+                self.__put_body()
+            else :
+                raise
 
-# uploads a posixFS file to s3 storage
-    def __upload(**kwargs) : 
-        posixFS_format.path = Path.PurePath(kwargs['FILE_PATH'],posixFS_format.path)
-        posixFS_parent_dir = Path.PurePath( '%s/%s'%(self.file_path.parents[0]))
-        if posixFS_format.path.exists() :
-            posixFS_format.__set_body()
-            posixFS_parent_dir = Path.PurePath( '%s/%s'%(posixFS.path.parents[0]))
-            if self.__verify_xml() :
-                posixFS_format.tree = self.body = ET.parse(self.path)
-                root = posixFS_format.tree.getroot()
+# uploads a _posixFS file to s3 storage
+    def __upload(**kwargs) :  # assumes s3 objects do not exist
+        _posixFS_format.path = PurePath(kwargs['FILE_PATH'],_posixFS_format.path)
+        _posixFS_parent_dir = PurePath( '%s/%s'%(self.file_path.parents[0]))
+        if _posixFS_format.path.exists() :
+            if _posixFS_format.__verify_image() :
+                im = Image.open(_posixFS_format.path, _posixFS_format.format)
+                buffered = BytesIO()
+                _posixFS_format.body = _posixFS_format.image = im.save(buffered, format=_posixFS_format.format)
+                im.seek(0)
+                self._out_string = self._in_string = base64.b64encode(buffered.getvalue())
+                self.image = self.body = _posixFS_format.image 
+
+                self.__put_object() 
+
+                self._in_string = self._out_string
+            elif self.__verify_xml() :
+                _posixFS_format.tree = self.body = ET.parse(self.path)
+                root = _posixFS_format.tree.getroot()
                 for im in root.iter('img') :
-                    image_name = im.attrib['file']
-                    posixFS_image_path = Path.PurePath('%s/%s'%(posixFS_parent_dir, image_name))
+                    image_name = PurePath(im.attrib['file'])
+                    _posixFS_image_path = PurePath('%s/%s'%(_posixFS_parent_dir, image_name))
                     s3_image_object = storageMgr_format('s3',
                         BUCKET = self.bucket,
-                        PATH = posixFS_image_path, 
+                        PATH = _posixFS_image_path, 
                         REGION = self.region,
-                        ROOT_DIR = self.root_dir ) # if s3_format obj == s3_tiff obj, converts to S3_png obj 
-                        if  re.match(self._tiff_pattern, image_name.suffix) : # edit tiff tags in body_xml
-                            im.attrib['file'] = image_name.with_suffix('png')
-                            im.attrib['img-format'] = 'png'
-                        parent = im.getparent() # add an s3-href to the image-tag in the body_xml
-                        new_parent = ET.Element('a')
-                        new_parent.extend('parent')
-                        parent.append(new_parent)
-                        new_parent.attrib['href'] = self.uri
-                for posixFS_path in posixFS_path.parents[0].glob('*' + self._nb_pattern) :
+                        ROOT_DIR = self.root_dir ) # if _s3_format obj == s3_tiff obj, converts to S3_png obj 
+                    if  re.match(self._tiff_pattern, image_name.suffix) : # edit tiff tags in body_xml
+                        im.attrib['file'] = image_name.with_suffix('png')
+                        im.attrib['img-format'] = 'png'
+                    parent = im.getparent() # add an s3-href to the image-tag in the body_xml
+                    new_parent = ET.Element('a')
+                    new_parent.extend('parent')
+                    parent.append(new_parent)
+                    new_parent.attrib['href'] = self.uri
+                for _posixFS_path in _posixFS_path.parents[0].glob('*' + self._nb_pattern) :
                     s3_nb_object = storageMgr_format('s3',
                         BUCKET = self.bucket,
-                        PATH = posixFS_path,
+                        PATH = _posixFS_path,
                         REGION = self.region,
                         ROOT_DIR = self.root_dir)
-                self._out_string = posixFS.tree.tostring(root, pretty_print=True)
+                self._out_string = _posixFS.tree.tostring(root, pretty_print=True)
                 self.__put_object() 
+                self._in_string = _posixFS.tree.fromstring(root)
+            elif self.__verify_text() :
+                with open(_posixFS.path, 'r') as f :
+                    self._out_string = _posixFS._out_string = f.read()
+                    self.__put_object() 
+                    self._in_string = self._out_string
 
     def get (uri) :
         if len(uri) == 0 :
@@ -879,7 +899,7 @@ class s3_format (_posixFS_format) :
 
     def get (*args) :
         if args :
-            self.path = Path.PurePath(args[0])
+            self.path = PurePath(args[0])
         self.__get_body()
         if self.body != None :
             self.__update_associates()
@@ -894,16 +914,16 @@ class s3_format (_posixFS_format) :
 
 class _s3_jpeg (_s3_format) :
     def __init__(self, **kwargs) :
-        super(_s3_jpeg, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Receive Arguments #####
         self.acl = kwargs.get('ACL','public-read')
         self.body = kwargs.get('BODY',None)
         self.bucket = kwargs.get('BUCKET','')
         self._format = kwargs.get('(FORMAT','')
-        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.path = PurePath(kwargs.get('PATH', ''))
         self.region = kwargs.get('REGION','us-east-2')
-        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
         self._storageMgr = kwargs.get(STORAGE_MGR,'posixFS')
 
         if not self.__verify_jpeg() :
@@ -912,7 +932,7 @@ class _s3_jpeg (_s3_format) :
 
 ##### define Methods #####
     def __del__(self) :
-        super(_s3_jpeg, self).__del__() 
+        super().__del__() 
 
 ###############################################
 ############# s3 NB CLASS ###############
@@ -923,16 +943,16 @@ class _s3_jpeg (_s3_format) :
 ##### associated NB file-formats #####
 class _s3_nb (_s3_format) :
     def __init__(self, *args, **kwargs) :
-        super(_s3_nb, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Receive Arguments #####
         self._storageMgr = args[0]
         self.acl = kwargs.get('ACL','public-read')
         self.bucket = kwargs.get('BUCKET','')
         self._format = kwargs.get('(FORMAT','')
-        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.path = PurePath(kwargs.get('PATH', ''))
         self.region = kwargs.get('REGION','us-east-2')
-        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
 
         if not self.__verify_nb() :
             print ( self._exceptions['fatal']['nb'])
@@ -940,7 +960,7 @@ class _s3_nb (_s3_format) :
 
 ##### define Methods #####
     def __del__(self) :
-        super(_s3_nb, self).__del__() 
+        super().__del__() 
 
 ###############################################
 ############# s3 PNG CLASS ###############
@@ -951,16 +971,16 @@ class _s3_nb (_s3_format) :
 ##### associated PNG file-formats #####
 class _s3_png (_s3_format) :
     def __init__(self, **kwargs) :
-        super(_s3_png, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Receive Arguments #####
         self.acl = kwargs.get('ACL','public-read')
         self.body = kwargs.get('BODY',None)
         self.bucket = kwargs.get('BUCKET','')
         self._format = kwargs.get('(FORMAT','')
-        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.path = PurePath(kwargs.get('PATH', ''))
         self.region = kwargs.get('REGION','us-east-2')
-        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
         self._storageMgr = kwargs.get(STORAGE_MGR,'posixFS')
 
         if not self.__verify_png() :
@@ -969,7 +989,7 @@ class _s3_png (_s3_format) :
 
 ##### define Methods #####
     def __del__(self) :
-        super(_s3_png, self).__del__() 
+        super().__del__() 
 
 ###############################################
 ############# s3 RGB CLASS ###############
@@ -980,15 +1000,15 @@ class _s3_png (_s3_format) :
 ##### associated RGB file-formats #####
 class _s3_rgb (_s3_format) :
     def __init__(self, **kwargs) :
-        super(_s3_rgb, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Receive Arguments #####
         self.acl = kwargs.get('ACL','public-read')
         self.bucket = kwargs.get('BUCKET','')
         self._format = kwargs.get('(FORMAT','')
-        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.path = PurePath(kwargs.get('PATH', ''))
         self.region = kwargs.get('REGION','us-east-2')
-        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
         self._storageMgr = kwargs.get(STORAGE_MGR,'posixFS')
 
         if not self.__verify_rgb() :
@@ -997,7 +1017,7 @@ class _s3_rgb (_s3_format) :
 
 ##### define Methods #####
     def __del__(self) :
-        super(_s3_rgb, self).__del__() 
+        super().__del__() 
 
 
 ###############################################
@@ -1009,7 +1029,7 @@ class _s3_rgb (_s3_format) :
 ##### associated TEXT file-formats #####
 class _s3_text (_s3_format) :
     def __init__(self, **kwargs) :
-        super(_s3_text, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._storageMgr = kwargs.get(STORAGE_MGR,'posixFS')
 
 ##### Receive Arguments #####
@@ -1017,9 +1037,9 @@ class _s3_text (_s3_format) :
         self.body = kwargs.get('BODY',None)
         self.bucket = kwargs.get('BUCKET','')
         self._format = kwargs.get('(FORMAT','')
-        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.path = PurePath(kwargs.get('PATH', ''))
         self.region = kwargs.get('REGION','us-east-2')
-        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
 
         if not self.__verify_text() :
             print ( self._exceptions['fatal']['gif'])
@@ -1027,7 +1047,7 @@ class _s3_text (_s3_format) :
 
 ##### define Methods #####
     def __del__(self) :
-        super(_s3_text, self).__del__() 
+        super().__del__() 
 
 ###############################################
 ############# s3 TIFF CLASS ###############
@@ -1038,16 +1058,16 @@ class _s3_text (_s3_format) :
 ##### associated TIFF file-formats #####
 class _s3_tiff(_s3_format) :
     def __init__(self, args, **kwargs) :
-        super(_s3_tiff, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._storageMgr = args[0]
 
 ##### Receive Arguments #####
         self.acl = kwargs.get('ACL','public-read')
         self.bucket = kwargs.get('BUCKET','')
         self._format = kwargs.get('(FORMAT','')
-        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.path = PurePath(kwargs.get('PATH', ''))
         self.region = kwargs.get('REGION','us-east-2')
-        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
 
         if not self.__verify_tiff() :
             print ( self._exceptions['fatal']['tiff'])
@@ -1056,7 +1076,7 @@ class _s3_tiff(_s3_format) :
         self.__set_body()
 
     def __del__(self) :
-        super(_s3_tiff, self).__del__() 
+        super().__del__() 
 
     def __set_body () :
         if self.body == None :
@@ -1079,15 +1099,15 @@ class _s3_tiff(_s3_format) :
 
 class _s3_xml (_s3_format) :
     def __init__(self, **kwargs) :
-        super(_s3_xml, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 ##### Receive Arguments #####
         self.acl = kwargs.get('ACL','public-read')
         self.bucket = kwargs.get('BUCKET','')
         self._format = kwargs.get('(FORMAT','')
-        self.path = Path.PurePath(kwargs.get('PATH', ''))
+        self.path = PurePath(kwargs.get('PATH', ''))
         self.region = kwargs.gem.attrib['file']('REGION','us-east-2')
-        self.root_dir = Path.PurePath(kwargs.get('ROOT_DIR', ''))
+        self.root_dir = PurePath(kwargs.get('ROOT_DIR', ''))
         self._storageMgr = kwargs.get(STORAGE_MGR,'posixFS')
 
         if not self.__verify_xml() :
@@ -1098,18 +1118,18 @@ class _s3_xml (_s3_format) :
 
 ##### define Methods #####
     def __del__(self) :
-        super(_s3_xml, self).__del__() 
+        super().__del__() 
 
     def __set_body () :
         self.__get_body()
         self.__update_associates()
 
     def __update_associates() : 
-            parent_dir = Path.PurePath( '%s/%s'%(self.path.parents[0]))
+            parent_dir = PurePath( '%s/%s'%(self.path.parents[0]))
             root = self.tree.getroot()
             for im in root.iter('img') :
-                image_name = Path.PurePath(im.attrib['file'])
-                path = Path.PurePath('%s/%s'%(parent_dir, image_name))
+                image_name = PurePath(im.attrib['file'])
+                path = PurePath('%s/%s'%(parent_dir, image_name))
                 s3_image_object = storageMgr_format('s3',
                     BUCKET = self.bucket,
                     PATH = path, 
@@ -1144,39 +1164,100 @@ s3_patent_region = 'us-east-2'
 uspto_format = 'xml'
 
 ################# command-line interface #################
-parser = argparse.ArgumentParser()
-subparsers = parser.add_subparsers(help='commands')
+parser = argparse.ArgumentParser(prog='smifc')
+args = parser.parse_args()
+group_smifc = parser.add_argument_group ('group_smifc',
+    title = '<S>torage <M>anager <I>nterchange with <F>ormat <C>onversion',
+    description = 'Usage: smifc fs <[--path <path.ext> ] | [--fmt <data-format>]>,\
+        smifc s3 --acl,--bucket, <[--path <path.ext>] | [--fmt <data-format>]>, --region\
+        smifc stream <--fmt>, data_stream.\
+\
+        Shorthand notation uses a dash followed by the first letter\
+        of the argument identifier, e.g., -p instead --path\
+\
+        Purpose: Provide data interchage between storage managers\
+        and data conversion between data formats.\
+\
+        Description: This application enables the user to perform basic\
+        Create Read Update and Delete (CRUD) activites within the realm \
+        of each storage manager. Storage managers supported are\
+        data streams, Posix file systems, and AWS Simple Storage Service "s3".\
+        Data interchange between storage managers for simple text,\
+        graphics, and complex xml structures are supported.\
+\
+        Format conversion from tiff to png data formats is supported.\
+\
+        The Application Interfaces (API) for pathlib (text), lxml (xml), and\
+        PIL (gif, jpeg, rbg, tiff) can be used for further data manipulation.',
+        help = 'All copyrights are reserved.') 
+group_smifc.add_argument('fs', help='Usage: smifc fs <[--path <path.ext> ] | [--fmt <data-format>]>')
+group_smifc.add_argument('s3', help='Usage: smifc s3 <[--path <path.ext> ] | [--fmt <data-format>]>\
+        [<--acl> [<acl_name default:"public-read">], <--bucket bucket_name>,\
+            [<--region> <region_name default: "us-east-2">]')
+group_smifc.add_argument('stream', help='Usage: smifc stream <-n name:stream>,[...]')
+subparsers = parser.add_subparsers(help='Storage Manager Subcommands')
 
-################# [file] storage class subcommand line #################
-posixFS_parser = subparsers.add_parser(storageMgr='posixFS',help='specify storageMgr as "file":')
-posixFS_parser.add_argument('-f','--format', required=True, type=file, nargs=1, default = uspto_format,
-    help='Specify file-path with extension. if file-path unknown, specify file-format instead. Supported file-formats: gif, jpg, nb, png, rgb, text, tiff, xml')
+################# [fs] Posix File System Storage Manager Subcommand #################
+parser_fs = subparsers.add_parser('fs',help='Storage Manager is a posix file system.')
+group_fs = parser_fs.add_argument_group('group_fs',
+#    title = 'Posix File System Storage Manager',\
+    description = 'Supports posix file systems and data streams. Usage:\
+    smifc fs <[--fmt <data-format>] | [--path <path.ext>]>. Streaming methods use\
+    instantiated object data format specification.  Methods:\
+    get(<name:stream>,[...]), get(<path.ext>), put(<name:stream>,[...]), put(<path.ext>')
+group_fs_fmt = group_fs.add_mutually_exclusive_group(required=True)
+group_fs_fmt.add_argument('-f','--fmt', required=False, type=str, nargs=1, default = '',
+    help='Specify data format. Supported data formats: gif, jpeg, nb, png, rgb, text, tiff, xml')
+group_fs_fmt.add_argument('-p','--path', required=False, type=open, nargs=1, default = '',
+    help='Specify posix file system path. Extension is required for file-path.')
 
-################# [s3] storage class subcommand line #################
-s3_parser = subparsers.add_parser(storageMgr='s3',help='specify storageMgr as "s3":')
-s3_parser.add_argument('-a','--acl', required=True, type=str, nargs=1, default = s3_patent_acl,
-    help='Specify s3 access control list')
-s3_parser.add_argument('-b','--bucket', required=True, type=str, nargs=1, default = s3_patent_bucket,
-    help='Specify s3 bucket')
-s3_parser.add_argument('-d','--directory', required=True, type=str, nargs=1, default = s3_patent_root_dir,
-    help='Specify s3 root directory')
-s3_parser.add_argument('-f','--format', required=True, type=file, nargs=1, default = uspto_format,
-    help='Specify file-path with extension else use file-format when file does not exist. Supported file-formats: gif, nb, png, rgb, text, tiff, xml')
-s3_parser.add_argument('-r','--region', required=True, type=str, nargs=1, default = s3_patent_region,
-    help='Specify s3 region')
+################# [s3] AWS Simple Storage Service subcommand #################
+parser_s3 = subparsers.add_parser('s3',help='Storage Manager is AWS Simple Storage Service')
+group_s3 = parser_fs.add_argument_group('group_s3',
+#    title = 'AWS Simple Storage Service Storage Manager',
+    description = 'Supports AWS s3, posix file systems and data streams. Usage:\
+    smifc s3 <[--path <path.ext> ] | [--fmt <data-format>]>, [<--acl> [<acl_name default:"public-read">],\
+    <--bucket bucket_name>, [<--region> <region_name default: "us-east-2">]\
+    Streaming methods use instantiated data format specification.  Methods:\
+  \
+    get( <uri> )\
+\
+    get ([<ACL= acl_name default:"public-read">], <BUCKET = bucket_name>,\
+    <PATH = path.ext>, [<REGION = > <region_name default: "us-east-2">] \
+\
+    put ([<ACL= acl_name default:"public-read">], <BUCKET = bucket_name>,\
+    <PATH = path.ext>, [<REGION = > <region_name default: "us-east-2">]\
+\
+    get(<name:stream>,[...]), get(<path.ext>), put(<name:stream>,[...]), put(<path.ext>')
+group_s3_fmt = group_s3_mutually_exclusive_group(required=True)
+group_s3_fmt.add_argument('-f','--fmt', required=False, type=str, nargs=1, default = '',
+    help='Specify data format. Supported data formats: gif, jpeg, nb, png, rgb, text, xml')
+group_s3_fmt.add_argument('-p','--path', required=False, type=open, nargs=1, default = '',
+    help='Specify s3 path.ext. Extension is required for s3 object.')
 
-if Path.PurePath(format).exists :
-    data_format = Path.PurePath(format).suffix
-    path = format
+################# [stream] stream data subcommand #################
+parser_stream = subparsers.add_parser('stream',help='Storage Manager is AWS Simple Storage Service')
+group_stream = parser_fs.add_argument_group('group_stream', title = 'AWS Simple Storage Service Storage Manager',
+    description = 'Supports data streams.\
+    Usage: smifc stream <-n name:stream>,[...])\
+    Methods: get(<name:stream>,[...]), put(<name:stream>,[...]')
+group_stream.add_argument('-n','--name', required=True, default = None,
+    help='Specify name:value pairs')
+
+StorageMgr = args[1] 
+
+if  PurePath(path).exists :
+    data_format = path.suffix()
 else :
-    data_format = format
-    path = ''
+    data_formate= fmt
+args = parser.parse_args('foo 1 -x 2'.split())
+args.func(args)
 
 patent_xml = storageMgr_format(
     self._storageMgr,
     ACL = acl, 
     BUCKET = bucket, 
-    FORMAT = data_format,
+    FORMAT = mime,
     REGION = region,
     PATH = path, 
     ROOT_DIR = root_dir)
