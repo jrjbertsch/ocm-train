@@ -7,24 +7,25 @@
 function usage {
     echo "USAGE: aws-import-key [-h] [-d] <-n <key-name>> <-p <key-path>>" 
     echo "Required: <-n <key-name>> - Used to generate a named key"
-    echo "Required: <-p <key-path>> - The file-path for the new RSA private-key. The new"
+    echo "Required: <-d <key-dir>> - The file-directory for the new RSA private-key file. The new"
     echo "          RSA public-key file-name uses the private-key file-name with a <.pub> extension." 
-    echo "Optional: [-d]  - Dry run: Tests and confirms service connection -- no keys are imported."
+    echo "Optional: [-x]  - Dry run: Tests and confirms service connection -- no keys are imported."
     echo "Optional: [-h]  - Help."
     exit 1
 }
 if [[ ! $@ =~ ^\-.+ ]]; then
     usage
 fi
-while getopts ":hdn:p:" opt; do
+
+while getopts ":hxn:d:" opt; do
   case ${opt} in
     n )
         keyName=$OPTARG 
         ;;
-    p )
-        keyPath=$OPTARG;
-        ;;
     d )
+        keyDir=$OPTARG;
+        ;;
+    x )
         dryRunOpt=--dry-run
         ;;
     h )
@@ -50,19 +51,19 @@ shift $((OPTIND -1))
 if [  -z "${keyName}" ]; then
 	usage
 fi
-if [  -z "${keyPath}" ]; then
+if [  -z "${keyDir}" ]; then
 	usage
 fi
-    ssh-keygen  -C "${keyName}" -f "${keyPath}" -N ''
+keyPath="${keyDir}/${keyName}"
 if [ ! -f "${keyPath}" ]; then
     ssh-keygen  -C "${keyName}" -f "${keyPath}" -N ''
 else 
-    echo "Key file already exists.\n"
+    echo "Warning: New key not generated: ${keyPath} already exists."
 fi
 if [ $? -ne 0 ];then
     exit
 fi
-read -r -p "Import existing key to AWS key pair service? [y/N] " response
+read -r -p "Import key to AWS key pair service? [y/N] " response
 case "$response" in
     [yY][eE][sS]|[yY]) 
 	;;
@@ -70,4 +71,4 @@ case "$response" in
 	exit 1
 	;;        
 esac
-aws ec2  import-key-pair "${dryRunOpt}" --key-name "${keyName}" --public-key-material "fileb://${keyPath}.pub"
+aws ec2 import-key-pair "${dryRunOpt}" --key-name "${keyName}.pub" --public-key-material "fileb://${keyPath}.pub"
